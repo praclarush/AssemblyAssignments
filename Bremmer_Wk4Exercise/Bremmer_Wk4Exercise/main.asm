@@ -37,12 +37,6 @@ INCLUDE macros.inc
 ExitProcess proto, dwExitCode:dword
 BUFFER_SIZE = 5000
 
-COORD STRUCT
-X WORD ?
-Y WORD ?
-COORD ENDS
-
-
 .data
 ;//Question 1 Variables
 buffer BYTE BUFFER_SIZE DUP(? )
@@ -51,7 +45,15 @@ fileHandle HANDLE ?
 
 ;//Question 2 Variables
 randVal DWORD ?
-AllPoints COORD 32 DUP(<0,0>)
+xAxis BYTE "-", 0
+yAxis BYTE "|", 0
+point BYTE "*", 0
+consoleRow BYTE ?
+consoleCols BYTE ?
+centerX BYTE ?
+centerY BYTE ?
+xPoint BYTE ?
+yPoint BYTE ?
 
 .code
 main proc
@@ -92,30 +94,138 @@ decode_string :
 Question_2:
 call Clrscr
 
-mov	edi, 0
-mov ecx, SIZEOF AllPoints
-mov ax, 1
+;//Prep Registers
+mov al, 0
+mov dl, 0
+mov eax, 0
+mov edx, 0
+mov ebx, 0
+
+;//Get Max X,Y of Console
+mov ax, white
+call SetTextColor
+
+call GetMaxXY                       ;//Get the max size of the console
+mov consoleRow, al                  ;//save the max rows (y)
+mov consoleCols, dl                 ;//save the max columns (x)
+
+;//Get Center of X Axis of Console
+xor al, al                          ;//clean the al register
+movzx ax, consoleRow                ;//store the height of the console for division 
+mov bl, 2
+div bl                              ;//divide the contents of the ax register by the contents of the bl register
+mov centerX, al                     ;//save the center of the console columns as the center of the X axis (I THINK THESE ARE REVERSED)
+
+;//Get Center of Y Axis of Console
+xor al, al                          ;//clean the al register
+movzx ax, consoleCols               ;//store the width of the console for division
+mov bl, 2
+div bl                              ;//divide the contents of the ax register by the contents of the bl register
+mov centerY, al                     ;//save the center of the console columns as the center of the Y axis (I THINK THESE ARE REVERSED)
+
+;//Prep Draw_X_Axis
+movzx ecx, consoleCols              ;//move the width of the console into ecx register to use as a loop counter
+mov al, xAxis                       ;//move the character ("-") for printing
+mov dl, 0
+mov dh, centerX                     ;//set the console curser at the center of the y axis to draw the x axis
+
+Draw_X_Axis :
+call Gotoxy                         ;//move the cursor to the location specified by dl,dh
+call WriteChar                      ;//write the value of al ("-") onto the screen
+inc dl                              ;//move the cursor over one
+loop Draw_X_Axis
+
+;//Prep Draw_Y_Axis
+movzx ecx, consoleRow               ;//move the height of the console into the ecx register for use as a loop counter 
+mov al, yAxis                       ;//move the character ("|") for printing
+mov dl, centerY                     ;//set the console curser at the center of the x axis to draw the y axis
+mov dh, 0
+
+Draw_Y_Axis :
+call Gotoxy                         ;//move the cursor to the location specified by dl,dh
+call WriteChar                      ;//write the value of al ("|") onto the screen
+inc dh                              ;//move the cursor over one
+loop Draw_Y_Axis
+
+mov ecx,32                          ;//Set Loop counter
+
+call Randomize                      ;//init the randomizer
+
+Generate_Point:
+;//clean the registers for use
+xor eax, eax
+xor edx, edx
+mov dh, 0
+mov dl, 0
+mov al, 0
+
+;//get the x location for the point 
+mov eax, 30                         ;//set the max number that can be returned by the randomRange
+call RandomRange                    ;//return a number between 0 and eax-1 (29)
+mov dh, al                          ;//move the lower fourth of the value returned in the eax register to the dh register for manipulation
+sub dh, 15                          ;//subtract 15 from dh so that our range is between -15 and 14
+add dh, centerX                     ;//add the length of the first half of the console's width so that everything is spaced properly
+mov xPoint, dh                      ;//move the value of dh to xPoint for saving (this is due to needing to use those registers again)
+
+;// clean the registers
+mov edx, eax
+xor eax, eax
+
+;//get the y location for the point
+mov eax, 30                         ;//set the max number that can be returned by the randomRange
+call RandomRange                    ;//return a number between 0 and eax-1 (29)
+mov dl, al                          ;// move the lower fourth of the value returned in the eax register to the dh register for manipulation
+sub dl, 15                          ;//subtract 15 from dl so that our range is between -15 and 14
+add dl, centerY                     ;//add the length of the first half of the console's height so that everything is spaced properly
+mov yPoint, dl                      ;//move the value of the dl to the yPoint for saving (This is incase those registers are needed before we use them again)
 
 
-Fill_Coord_Array :
+xor ax, ax                          ;//Clean the ax register for coloring; this sets the color of the text to black
+mov dl, yPoint                      ;//move the value of yPoint to dl for drawing 
+mov dh, xPoint                      ;//move the value of xPoint to dh for drawing 
 
-mov(COORD PTR AllPoints[edi]).X, ax
-mov(COORD PTR AllPoints[edi]).Y, ax
+jmp Set_Color                       ;//Jump to the Set Color section to decide on what color the text should be
+                                    ;// (note to self) : this jump is here because there a limit on how much can be between a jump(loop) and it's destination.
 
-    ;//FILL Y
-    ; mov eax, 0
-        ; mov eax, 29
-        ; call RandomRange
-        ; sub eax, 15
-        ; mov al, eax
-        ; mov(COORD PTR AllPoints[edi]).Y, ax
+Draw_Point:
+call GotoXY                         ;//set the cursor at the position specified by the dl,dh registers 
+mov al, point                       ;//move the character ("*") that will be drawn into the al register 
+call WriteChar                      ;//write the character that is in the al register to the console ("*")
+    
+loop Generate_Point
 
+;//reset text color for wait prompt
+mov ax, white
+call SetTextColor
 
-    call WaitMsg
+call WaitMsg
+jmp quit
 
+Set_Color:
+;//*********************************************
+;//* Set the color of the point before drawing *
+;//*********************************************
+;// Quadrant 1 points gets a yellow *
+;// Quadrant 2 points gets a cyan *
+;// Quadrant 3 points gets a red *
+;// Quadrant 4 points gets a green *
+.IF(dh > centerX) && (dl > centerY)
+mov ax, green
+.ELSEIF(dh > centerX) && (dl < centerY)
+mov ax, red
+.ELSEIF(dh < centerX) && (dl > centerY)
+mov ax, cyan
+.ELSEIF(dh < CenterX) && (dl < centerY)
+mov ax, yellow
+.ELSE
+mov ax, white
+.ENDIF
+
+call SetTextColor                   ;//Set the color of the text to what is in the ax register
+jmp Draw_Point
 
 
 quit :
-invoke ExitProcess, 0
-main endp
-end main
+    invoke ExitProcess, 0           ;//Exit the application
+ main endp
+ end main

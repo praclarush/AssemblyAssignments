@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    08/27/15 20:46:34
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    08/29/15 13:12:48
 main.asm						     Page 1 - 1
 
 
@@ -62,12 +62,6 @@ main.asm(33) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				ExitProcess proto, dwExitCode:dword
  = 00001388			BUFFER_SIZE = 5000
 
-				COORD STRUCT
-				X WORD ?
-				Y WORD ?
-				COORD ENDS
-
-
  00000000			.data
 				;//Question 1 Variables
  00000000  00001388 [		buffer BYTE BUFFER_SIZE DUP(? )
@@ -80,9 +74,15 @@ main.asm(33) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 
 				;//Question 2 Variables
  0000139A 00000000		randVal DWORD ?
- 0000139E  00000020 [		AllPoints COORD 32 DUP(<0,0>)
-	    0000 0000
-	   ]
+ 0000139E 2D 00			xAxis BYTE "-", 0
+ 000013A0 7C 00			yAxis BYTE "|", 0
+ 000013A2 2A 00			point BYTE "*", 0
+ 000013A4 00			consoleRow BYTE ?
+ 000013A5 00			consoleCols BYTE ?
+ 000013A6 00			centerX BYTE ?
+ 000013A7 00			centerY BYTE ?
+ 000013A8 00			xPoint BYTE ?
+ 000013A9 00			yPoint BYTE ?
 
  00000000			.code
  00000000			main proc
@@ -125,37 +125,146 @@ main.asm(33) : warning A4011:multiple .MODEL directives found : .MODEL ignored
  00000063			Question_2:
  00000063  E8 00000000 E	call Clrscr
 
- 00000068  BF 00000000		mov	edi, 0
- 0000006D  B9 00000080		mov ecx, SIZEOF AllPoints
- 00000072  66| B8 0001		mov ax, 1
+				;//Prep Registers
+ 00000068  B0 00		mov al, 0
+ 0000006A  B2 00		mov dl, 0
+ 0000006C  B8 00000000		mov eax, 0
+ 00000071  BA 00000000		mov edx, 0
+ 00000076  BB 00000000		mov ebx, 0
+
+				;//Get Max X,Y of Console
+ 0000007B  66| B8 000F		mov ax, white
+ 0000007F  E8 00000000 E	call SetTextColor
+
+ 00000084  E8 00000000 E	call GetMaxXY                       ;//Get the max size of the console
+ 00000089  A2 000013A4 R	mov consoleRow, al                  ;//save the max rows (y)
+ 0000008E  88 15 000013A5 R	mov consoleCols, dl                 ;//save the max columns (x)
+
+				;//Get Center of X Axis of Console
+ 00000094  32 C0		xor al, al                          ;//clean the al register
+ 00000096  66| 0F B6 05		movzx ax, consoleRow                ;//store the height of the console for division 
+	   000013A4 R
+ 0000009E  B3 02		mov bl, 2
+ 000000A0  F6 F3		div bl                              ;//divide the contents of the ax register by the contents of the bl register
+ 000000A2  A2 000013A6 R	mov centerX, al                     ;//save the center of the console columns as the center of the X axis (I THINK THESE ARE REVERSED)
+
+				;//Get Center of Y Axis of Console
+ 000000A7  32 C0		xor al, al                          ;//clean the al register
+ 000000A9  66| 0F B6 05		movzx ax, consoleCols               ;//store the width of the console for division
+	   000013A5 R
+ 000000B1  B3 02		mov bl, 2
+ 000000B3  F6 F3		div bl                              ;//divide the contents of the ax register by the contents of the bl register
+ 000000B5  A2 000013A7 R	mov centerY, al                     ;//save the center of the console columns as the center of the Y axis (I THINK THESE ARE REVERSED)
+
+				;//Prep Draw_X_Axis
+ 000000BA  0F B6 0D		movzx ecx, consoleCols              ;//move the width of the console into ecx register to use as a loop counter
+	   000013A5 R
+ 000000C1  A0 0000139E R	mov al, xAxis                       ;//move the character ("-") for printing
+ 000000C6  B2 00		mov dl, 0
+ 000000C8  8A 35 000013A6 R	mov dh, centerX                     ;//set the console curser at the center of the y axis to draw the x axis
+
+ 000000CE			Draw_X_Axis :
+ 000000CE  E8 00000000 E	call Gotoxy                         ;//move the cursor to the location specified by dl,dh
+ 000000D3  E8 00000000 E	call WriteChar                      ;//write the value of al ("-") onto the screen
+ 000000D8  FE C2		inc dl                              ;//move the cursor over one
+ 000000DA  E2 F2		loop Draw_X_Axis
+
+				;//Prep Draw_Y_Axis
+ 000000DC  0F B6 0D		movzx ecx, consoleRow               ;//move the height of the console into the ecx register for use as a loop counter 
+	   000013A4 R
+ 000000E3  A0 000013A0 R	mov al, yAxis                       ;//move the character ("|") for printing
+ 000000E8  8A 15 000013A7 R	mov dl, centerY                     ;//set the console curser at the center of the x axis to draw the y axis
+ 000000EE  B6 00		mov dh, 0
+
+ 000000F0			Draw_Y_Axis :
+ 000000F0  E8 00000000 E	call Gotoxy                         ;//move the cursor to the location specified by dl,dh
+ 000000F5  E8 00000000 E	call WriteChar                      ;//write the value of al ("|") onto the screen
+ 000000FA  FE C6		inc dh                              ;//move the cursor over one
+ 000000FC  E2 F2		loop Draw_Y_Axis
+
+ 000000FE  B9 00000020		mov ecx,32                          ;//Set Loop counter
+
+ 00000103  E8 00000000 E	call Randomize                      ;//init the randomizer
+
+ 00000108			Generate_Point:
+				;//clean the registers for use
+ 00000108  33 C0		xor eax, eax
+ 0000010A  33 D2		xor edx, edx
+ 0000010C  B6 00		mov dh, 0
+ 0000010E  B2 00		mov dl, 0
+ 00000110  B0 00		mov al, 0
+
+				;//get the x location for the point 
+ 00000112  B8 0000001E		mov eax, 30                         ;//set the max number that can be returned by the randomRange
+ 00000117  E8 00000000 E	call RandomRange                    ;//return a number between 0 and eax-1 (29)
+ 0000011C  8A F0		mov dh, al                          ;//move the lower fourth of the value returned in the eax register to the dh register for manipulation
+ 0000011E  80 EE 0F		sub dh, 15                          ;//subtract 15 from dh so that our range is between -15 and 14
+ 00000121  02 35 000013A6 R	add dh, centerX                     ;//add the length of the first half of the console's width so that everything is spaced properly
+ 00000127  88 35 000013A8 R	mov xPoint, dh                      ;//move the value of dh to xPoint for saving (this is due to needing to use those registers again)
+
+				;// clean the registers
+ 0000012D  8B D0		mov edx, eax
+ 0000012F  33 C0		xor eax, eax
+
+				;//get the y location for the point
+ 00000131  B8 0000001E		mov eax, 30                         ;//set the max number that can be returned by the randomRange
+ 00000136  E8 00000000 E	call RandomRange                    ;//return a number between 0 and eax-1 (29)
+ 0000013B  8A D0		mov dl, al                          ;// move the lower fourth of the value returned in the eax register to the dh register for manipulation
+ 0000013D  80 EA 0F		sub dl, 15                          ;//subtract 15 from dl so that our range is between -15 and 14
+ 00000140  02 15 000013A7 R	add dl, centerY                     ;//add the length of the first half of the console's height so that everything is spaced properly
+ 00000146  88 15 000013A9 R	mov yPoint, dl                      ;//move the value of the dl to the yPoint for saving (This is incase those registers are needed before we use them again)
 
 
- 00000076			Fill_Coord_Array :
+ 0000014C  66| 33 C0		xor ax, ax                          ;//Clean the ax register for coloring; this sets the color of the text to black
+ 0000014F  8A 15 000013A9 R	mov dl, yPoint                      ;//move the value of yPoint to dl for drawing 
+ 00000155  8A 35 000013A8 R	mov dh, xPoint                      ;//move the value of xPoint to dh for drawing 
 
- 00000076  66| 89 87		                 mov(COORD PTR AllPoints[edi]).X, ax
-	   0000139E R
- 0000007D  66| 89 87		                 mov(COORD PTR AllPoints[edi]).Y, ax
-	   000013A0 R
+ 0000015B  EB 21		jmp Set_Color                       ;//Jump to the Set Color section to decide on what color the text should be
+				                                    ;// (note to self) : this jump is here because there a limit on how much can be between a jump(loop) and it's destination.
+
+ 0000015D			Draw_Point:
+ 0000015D  E8 00000000 E	call GotoXY                         ;//set the cursor at the position specified by the dl,dh registers 
+ 00000162  A0 000013A2 R	mov al, point                       ;//move the character ("*") that will be drawn into the al register 
+ 00000167  E8 00000000 E	call WriteChar                      ;//write the character that is in the al register to the console ("*")
+				    
+ 0000016C  E2 9A		loop Generate_Point
+
+				;//reset text color for wait prompt
+ 0000016E  66| B8 000F		mov ax, white
+ 00000172  E8 00000000 E	call SetTextColor
+
+ 00000177  E8 00000000 E	call WaitMsg
+ 0000017C  EB 66		jmp quit
+
+ 0000017E			Set_Color:
+				;//*********************************************
+				;//* Set the color of the point before drawing *
+				;//*********************************************
+				;// Quadrant 1 points gets a yellow *
+				;// Quadrant 2 points gets a cyan *
+				;// Quadrant 3 points gets a red *
+				;// Quadrant 4 points gets a green *
+				.IF(dh > centerX) && (dl > centerY)
+ 0000018E  66| B8 0002		mov ax, green
+				.ELSEIF(dh > centerX) && (dl < centerY)
+ 000001A4  66| B8 0004		mov ax, red
+				.ELSEIF(dh < centerX) && (dl > centerY)
+ 000001BA  66| B8 0003		mov ax, cyan
+				.ELSEIF(dh < CenterX) && (dl < centerY)
+ 000001D0  66| B8 000E		mov ax, yellow
+				.ELSE
+ 000001D6  66| B8 000F		mov ax, white
+				.ENDIF
+
+ 000001DA  E8 00000000 E	call SetTextColor                   ;//Set the color of the text to what is in the ax register
+ 000001DF  E9 FFFFFF79		jmp Draw_Point
 
 
-				    ;//FILL Y
-				    ; mov eax, 0
-				        ; mov eax, 29
-				        ; call RandomRange
-				        ; sub eax, 15
-				        ; mov al, eax
-				        ; mov(COORD PTR AllPoints[edi]).Y, ax
-
-
- 00000084  E8 00000000 E	    call WaitMsg
-
-
-
- 00000089			quit :
-				invoke ExitProcess, 0
- 00000090			main endp
-				end main
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    08/27/15 20:46:34
+ 000001E4			quit :
+				    invoke ExitProcess, 0           ;//Exit the application
+ 000001EB			 main endp
+				 end main
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    08/29/15 13:12:48
 main.asm						     Symbols 2 - 1
 
 
@@ -267,8 +376,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 0000141E Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000090 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000013AA Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000001EB Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -375,12 +484,16 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000090 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000001EB Public STDCALL
   Question_1 . . . . . . . . . .	L Near	 00000002 _TEXT	
   decode_string  . . . . . . . .	L Near	 00000034 _TEXT	
   Question_2 . . . . . . . . . .	L Near	 00000063 _TEXT	
-  Fill_Coord_Array . . . . . . .	L Near	 00000076 _TEXT	
-  quit . . . . . . . . . . . . .	L Near	 00000089 _TEXT	
+  Draw_X_Axis  . . . . . . . . .	L Near	 000000CE _TEXT	
+  Draw_Y_Axis  . . . . . . . . .	L Near	 000000F0 _TEXT	
+  Generate_Point . . . . . . . .	L Near	 00000108 _TEXT	
+  Draw_Point . . . . . . . . . .	L Near	 0000015D _TEXT	
+  Set_Color  . . . . . . . . . .	L Near	 0000017E _TEXT	
+  quit . . . . . . . . . . . . .	L Near	 000001E4 _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -400,7 +513,6 @@ Symbols:
 @fardata . . . . . . . . . . . .	Text   	 FLAT
 @stack . . . . . . . . . . . . .	Text   	 FLAT
 ALT_MASK . . . . . . . . . . . .	Number	 00000003h   
-AllPoints  . . . . . . . . . . .	COORD	 0000139E _DATA	
 BUFFER_SIZE  . . . . . . . . . .	Number	 00001388h   
 CAPSLOCK_ON  . . . . . . . . . .	Number	 00000080h   
 CREATE_ALWAYS  . . . . . . . . .	Number	 00000002h   
@@ -605,6 +717,10 @@ black  . . . . . . . . . . . . .	Number	 00000000h
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
 buffer . . . . . . . . . . . . .	Byte	 00000000 _DATA	
+centerX  . . . . . . . . . . . .	Byte	 000013A6 _DATA	
+centerY  . . . . . . . . . . . .	Byte	 000013A7 _DATA	
+consoleCols  . . . . . . . . . .	Byte	 000013A5 _DATA	
+consoleRow . . . . . . . . . . .	Byte	 000013A4 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 fileHandle . . . . . . . . . . .	DWord	 00001396 _DATA	
@@ -618,10 +734,15 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
+point  . . . . . . . . . . . . .	Byte	 000013A2 _DATA	
 randVal  . . . . . . . . . . . .	DWord	 0000139A _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
+xAxis  . . . . . . . . . . . . .	Byte	 0000139E _DATA	
+xPoint . . . . . . . . . . . . .	Byte	 000013A8 _DATA	
+yAxis  . . . . . . . . . . . . .	Byte	 000013A0 _DATA	
+yPoint . . . . . . . . . . . . .	Byte	 000013A9 _DATA	
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
 
 	   1 Warnings
