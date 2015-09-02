@@ -1,0 +1,168 @@
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/01/15 23:11:19
+main.asm						     Page 1 - 1
+
+
+				;/* ---------------------------------------------------------------------------
+				;**
+				;** File: main.asm
+				;** Description: Assembly Template
+				;** Author: Nathan Bremmer
+				;** -------------------------------------------------------------------------*/
+
+				.386
+				.model flat, stdcall
+				.stack 4096
+				ExitProcess proto, dwExitCode:dword
+
+ 00000000			.data
+
+ 00000000			.code
+
+				;// Application Entry Point
+ 00000000			main proc
+
+				;/*TODO(Nathan) Task List in order of operations for Game Start
+				; *1. Clear Screen
+				; *2. Draw Main Menu
+				; *3. User Selections - Start Game, Options, Score List, Exit
+				; *4. Options Screen: If user selects Options -> Draw the Options
+				; *5. Score List: If user selects Score List -> Draw the Score List
+				; *6. Start Game: if user selects Start Game -> start the MainGameLoop;
+				; *7. Exit: If use selects Exit -> quit the application
+				; */
+				invoke ExitProcess, 0
+ 00000007			main endp
+
+				;//Procedures
+
+ 00000007			MainGameLoop PROC
+ 00000000			.data
+ 00000007			.code
+				;/*TODO(Nathan) Task List in order of operations for Main Game Loop
+				 ; *1. Clear Screen
+				 ; *2. Set Player Name
+				 ; *3. Call PrintMaze -> Draw the Map onto the screen;
+				 ; *4. Call GetPlayerInput -> Get input from the player as to what to do; How to move; Timer needs to keep updating even while waiting for player input
+				 ; *5. Call UpdateGameInformation -> Updates the Score, Timer, Player, and Items
+				 ; *6. If game reaches defined End points return to caller
+				 ; */
+ 00000007  C3			ret
+ 00000008			MainGameLoop ENDP
+
+ 00000008			PrintMaze PROC;
+ 00000000			.data
+ 00000008			.code
+ 00000008  C3			ret
+ 00000009			PrintMaze ENDP
+
+ 00000009			GetPlayerInput PROC;//Reads the input from the player
+ 00000000			.data
+ 00000009			.code
+				;//TODO(Nathan): Don't have a clue
+ 00000009  C3			ret
+ 0000000A			GetPlayerInput ENDP
+
+ 0000000A			MenuScreen PROC;
+ 00000000			.data
+ 0000000A			.code
+				;/*TODO(Nathan) Task List in order of operations for Menu Screen
+				 ; *1. Clear Screen
+				 ; *2. Print Menu Items; Play, Options, Score List, Exit
+				 ; *3. Update graphical indicator of Select; more then likely this (->)
+				 ; *Notes: Read Player Input here?
+				 ; */
+
+ 0000000A  C3			ret
+ 0000000B			MenuScreen ENDP
+
+ 0000000B			ScoreScreen PROC;
+ 00000000			.data
+ 0000000B			.code
+				;/*TODO(Nathan) Task List in order of operations for Score Screen
+				 ; *1. Clear Screen
+				 ; *2. Read Score File
+				 ; *3. Print Scores onto Screen
+				 ; *4. Print Options for Return to Main Screen, Clear Score List
+				 ; *Notes: Read Player Input here?.                                                                                                           
+				 ; */
+ 0000000B  C3			ret
+ 0000000C			ScoreScreen ENDP
+
+ 0000000C			SaveScore PROC;
+ 00000000			.data
+ 0000000C			.code
+				;/*TODO(Nathan) Task List in order of operations for SaveScore
+				 ; *1. Clear Screen
+				 ; *2. Save Score to File
+				 ; */
+ 0000000C  C3			ret
+ 0000000D			SaveScore ENDP
+
+ 0000000D			OptionsScreen PROC;
+ 00000000			.data
+ 0000000D			.code
+				;/*TODO(Nathan) Task List in order of operations for Options
+				 ; *1. Clear Screen
+				 ; *2. Enable Timer
+				 ; */
+ 0000000D  C3			ret
+ 0000000E			OptionsScreen ENDP
+
+ 0000000E			UpdateGameInformation PROC
+ 00000000			.data
+ 0000000E			.code
+				;/*TODO(Nathan) Task List in order of operations for Update Game Information
+				 ; *1. Draw Time, Score, Player and Items onto Maze
+				 ; */
+ 0000000E  C3			ret
+ 0000000F			UpdateGameInformation ENDP
+
+				end main
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/01/15 23:11:19
+main.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 DWord	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000000 DWord	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 0000000F DWord	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+ExitProcess  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+GetPlayerInput . . . . . . . . .	P Near	 00000009 _TEXT	Length= 00000001 Public STDCALL
+MainGameLoop . . . . . . . . . .	P Near	 00000007 _TEXT	Length= 00000001 Public STDCALL
+MenuScreen . . . . . . . . . . .	P Near	 0000000A _TEXT	Length= 00000001 Public STDCALL
+OptionsScreen  . . . . . . . . .	P Near	 0000000D _TEXT	Length= 00000001 Public STDCALL
+PrintMaze  . . . . . . . . . . .	P Near	 00000008 _TEXT	Length= 00000001 Public STDCALL
+SaveScore  . . . . . . . . . . .	P Near	 0000000C _TEXT	Length= 00000001 Public STDCALL
+ScoreScreen  . . . . . . . . . .	P Near	 0000000B _TEXT	Length= 00000001 Public STDCALL
+UpdateGameInformation  . . . . .	P Near	 0000000E _TEXT	Length= 00000001 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000007 Public STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000003h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+
+	   0 Warnings
+	   0 Errors
