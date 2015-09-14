@@ -4,14 +4,23 @@
 ;** Description: Assembly Template
 ;** Author: Nathan Bremmer
 ;** -------------------------------------------------------------------------*/
+INCLUDE Irvine32.inc
+INCLUDE macros.inc
 
 .386
 .model flat, stdcall
 .stack 4096
+
 ExitProcess proto, dwExitCode:dword
+BUFFER_SIZE = 5000
 
 .data
+mapWidth BYTE ?
+mapHeight BYTE ?
 
+;//THis will end up being a COOR Struct but for testing
+playerX BYTE ?
+playerY BYTE ?
 .code
 
 ;// Application Entry Point
@@ -26,6 +35,13 @@ main proc
 ; *6. Start Game: if user selects Start Game -> start the MainGameLoop;
 ; *7. Exit: If use selects Exit -> quit the application
 ; */
+
+
+call PrintMaze
+
+
+
+
 invoke ExitProcess, 0
 main endp
 
@@ -47,7 +63,45 @@ MainGameLoop ENDP
 
 PrintMaze PROC;
 .data
+buffer Byte BUFFER_SIZE DUP(? )
+fileName byte "level.dat", 0
+fileHandle HANDLE ?
 .code
+
+mov edx, OFFSET fileName
+call OpenInputFile
+mov fileHandle, eax
+
+mov edx, OFFSET buffer
+mov ecx, BUFFER_SIZE
+call ReadFromFile
+
+;//clean registers
+mov ecx, 0
+mov eax, 0
+mov ebx, 0
+
+mov edx, OFFSET buffer
+mov ecx, SIZEOF buffer
+
+
+;//Setup map size and player location
+
+mov al, buffer[5]
+mov bl, buffer[6]
+cld
+
+rep movsb
+
+call WriteString
+call Crlf
+
+mov eax, fileHandle
+call CloseFile
+call WaitMsg
+
+
+
 ret
 PrintMaze ENDP
 

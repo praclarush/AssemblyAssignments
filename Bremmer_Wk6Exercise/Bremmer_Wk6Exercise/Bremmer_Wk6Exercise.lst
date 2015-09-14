@@ -1,13 +1,22 @@
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/13/15 14:47:09
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/12/15 09:39:27
 main.asm						     Page 1 - 1
 
 
 				;/* ---------------------------------------------------------------------------
-				;**
 				;** File: main.asm
-				;** Description: Assembly Template
+				;** Description: Read two numbers; Finds the LCM of them; Determines if they
+				;**              are Prime Numbers
+				;** Assignment:
+				;**     Read two numbers from User Input
+				;**     Find the Least Common Multiple of those two Numbers
+				;**     Test Input:
+				;**         Input: 3,2 LCM = 6
+				;**         Input: 5,10 LCM = 10
+				;**         Input: 4,6 LCM = 12
+				;**     Determine if the two numbers entered or Prime
 				;** Author: Nathan Bremmer
 				;** -------------------------------------------------------------------------*/
+
 				INCLUDE Irvine32.inc
 			      C ; Include file for Irvine32.lib             (Irvine32.inc)
 			      C 
@@ -31,172 +40,247 @@ main.asm						     Page 1 - 1
 			      C .LIST
 			      C 
 
+
 				.386
 				.model flat, stdcall
-main.asm(11) : warning A4011:multiple .MODEL directives found : .MODEL ignored
+main.asm(21) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				.stack 4096
 
 				ExitProcess proto, dwExitCode:dword
- = 00001388			BUFFER_SIZE = 5000
 
  00000000			.data
- 00000000 00			mapWidth BYTE ?
- 00000001 00			mapHeight BYTE ?
+ 00000000 0000			number1 word 0
+ 00000002 0000			number2 word 0
 
-				;//THis will end up being a COOR Struct but for testing
- 00000002 00			playerX BYTE ?
- 00000003 00			playerY BYTE ?
  00000000			.code
-
-				;// Application Entry Point
+				;//------------------------------------------------------------------------------
  00000000			main proc
+				;//
+				;// Description: Main Application Entry Point
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
-				;/*TODO(Nathan) Task List in order of operations for Game Start
-				; *1. Clear Screen
-				; *2. Draw Main Menu
-				; *3. User Selections - Start Game, Options, Score List, Exit
-				; *4. Options Screen: If user selects Options -> Draw the Options
-				; *5. Score List: If user selects Score List -> Draw the Score List
-				; *6. Start Game: if user selects Start Game -> start the MainGameLoop;
-				; *7. Exit: If use selects Exit -> quit the application
-				; */
+				;//Get User Input
+ 00000000  E8 0000002D		call GetUserInput
 
+				;//Find Least Common Multiple
+ 00000005  E8 00000059		call FindLeastCommonMultiple
 
- 00000000  E8 00000008		call PrintMaze
+				;//Check if first number is prime
+ 0000000A  66| 33 C0		xor ax, ax                              ;//clean the ax register for use
+ 0000000D  66| A1		mov ax, number1                         ;//move the value of number1 to ax which is used by IsPrimeNumber
+	   00000000 R
+ 00000013  E8 000000DC		call IsPrimeNumber
 
+				;//Check if second number is prime
+ 00000018  66| 33 C0		xor ax, ax                              ;//clean the ax register for use
+ 0000001B  66| A1		mov ax, number2                         ;//move the value of number2 to ax which is used by IsPrimeNumber
+	   00000002 R
+ 00000021  E8 000000CE		call IsPrimeNumber
 
-
-
+ 00000026  E8 00000000 E	call WaitMsg                            ;//wait for use to end application
 				invoke ExitProcess, 0
- 0000000C			main endp
+ 00000032			main endp
 
-				;//Procedures
+				;//------------------------------------------------------------------------------
+ 00000032			GetUserInput PROC
+				;//
+				;// Description: Gets the input from the user
+				;// Uses: Nothing
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
- 0000000C			MainGameLoop PROC
  00000004			.data
- 0000000C			.code
-				;/*TODO(Nathan) Task List in order of operations for Main Game Loop
-				 ; *1. Clear Screen
-				 ; *2. Set Player Name
-				 ; *3. Call PrintMaze -> Draw the Map onto the screen;
-				 ; *4. Call GetPlayerInput -> Get input from the player as to what to do; How to move; Timer needs to keep updating even while waiting for player input
-				 ; *5. Call UpdateGameInformation -> Updates the Score, Timer, Player, and Items
-				 ; *6. If game reaches defined End points return to caller
-				 ; */
- 0000000C  C3			ret
- 0000000D			MainGameLoop ENDP
+ 00000004 45 6E 74 65 72	msgInputNumber1 byte "Enter Number 1: ", 0
+	   20 4E 75 6D 62
+	   65 72 20 31 3A
+	   20 00
+ 00000015 45 6E 74 65 72	msgInputNumber2 byte "Enter Number 2: ", 0
+	   20 4E 75 6D 62
+	   65 72 20 32 3A
+	   20 00
+ 00000032			.code
+				;//Clean Registers
+ 00000032  33 C0		xor eax, eax
+ 00000034  33 D2		xor edx, edx
 
- 0000000D			PrintMaze PROC;
- 00000004			.data
- 00000004  00001388 [		buffer Byte BUFFER_SIZE DUP(? )
-	    00
-	   ]
- 0000138C 6C 65 76 65 6C	fileName byte "level.dat", 0
-	   2E 64 61 74 00
- 00001396 00000000		fileHandle HANDLE ?
- 0000000D			.code
+				;//Get First Number form user
+ 00000036  BA 00000004 R	mov edx, OFFSET msgInputNumber1         ;//mov the prompt for the user to enter the first number into edx
+ 0000003B  E8 00000000 E	call WriteString                        ;//write the value of edx to the console screen
+ 00000040  E8 00000000 E	call ReadInt                            ;//reads input from the user
+ 00000045  66| A3		mov number1, ax                         ;//save the input from the user into a variable
+	   00000000 R
 
- 0000000D  BA 0000138C R	mov edx, OFFSET fileName
- 00000012  E8 00000000 E	call OpenInputFile
- 00000017  A3 00001396 R	mov fileHandle, eax
+				;//Get Second Number from user
+ 0000004B  33 C0		xor eax, eax                            ;//clean the eax register for use
+ 0000004D  BA 00000015 R	mov edx, OFFSET msgInputNumber2         ;//mov the prompt for the user to enter the first number into edx
+ 00000052  E8 00000000 E	call WriteString                        ;//write the value of edx to the console screen
+ 00000057  E8 00000000 E	call ReadInt                            ;//reads input from the user
+ 0000005C  66| A3		mov number2, ax                         ;//save the input from the user into a variable
+	   00000002 R
 
- 0000001C  BA 00000004 R	mov edx, OFFSET buffer
- 00000021  B9 00001388		mov ecx, BUFFER_SIZE
- 00000026  E8 00000000 E	call ReadFromFile
+ 00000062  C3			ret
+ 00000063			GetUserInput ENDP
 
-				;//clean registers
- 0000002B  B9 00000000		mov ecx, 0
- 00000030  B8 00000000		mov eax, 0
- 00000035  BB 00000000		mov ebx, 0
+				;//------------------------------------------------------------------------------
+ 00000063			FindLeastCommonMultiple PROC USES esi ebx
+				;//
+				;// Description: Finds the least Common Multiple for two numbers provided by
+				;//              by the user and prints that value to the screen
+				;// Uses: ESI, EBX, EFlags
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
- 0000003A  BA 00000004 R	mov edx, OFFSET buffer
- 0000003F  B9 00001388		mov ecx, SIZEOF buffer
+ 00000026			.data
+ 00000026 54 68 65 20 4C	msgLCM byte "The Least Common Multiple of the two numbers is ", 0
+	   65 61 73 74 20
+	   43 6F 6D 6D 6F
+	   6E 20 4D 75 6C
+	   74 69 70 6C 65
+	   20 6F 66 20 74
+	   68 65 20 74 77
+	   6F 20 6E 75 6D
+	   62 65 72 73 20
+	   69 73 20 00
+ 00000057 00000000		counter dword 0                         ;//used to track the attempt at finding the LCM
+ 0000005B 00000000		remainder1 dword 0
+ 0000005F 00000000		remainder2 dword 0
+ 00000065			.code
+				;//save the contents of the flag registers
+ 00000065  60			pushad
+ 00000066  9C			pushfd
+
+ 00000067  C7 05 00000057 R	mov counter, 2                           ;//start the attempt at 2
+	   00000002
+
+				;//TODO(Nathan): Set the counter to the largest of the two numbers
+
+ 00000071			L1:
+				;//clean the remainder variables
+ 00000071  C7 05 0000005B R	mov remainder1, 0
+	   00000000
+ 0000007B  C7 05 0000005F R	mov remainder2, 0
+	   00000000
+
+				;//get remainder for the first number
+ 00000085  BA 00000000		mov edx, 0                              ;//clean the edx register
+ 0000008A  A1 00000057 R	mov eax, counter                        ;//move the value of counter to eax
+ 0000008F  0F B7 1D		movzx ebx, number1                      ;//move the value of number1 to ebx
+	   00000000 R
+ 00000096  F7 F3		div ebx                                 ;// div eax by ebx
+ 00000098  89 15 0000005B R	mov remainder1, edx                     ;//move the remainder from edx to remainder1
+
+				;//get remainder for second number
+ 0000009E  BA 00000000		mov edx, 0                              ;//clean the edx register
+ 000000A3  A1 00000057 R	mov eax, counter                        ;//move the value of counter to eax
+ 000000A8  0F B7 1D		movzx ebx, number2                      ;//move the value of number 2 to ebx
+	   00000002 R
+ 000000AF  F7 F3		div ebx                                 ;//div eax by ebx
+ 000000B1  89 15 0000005F R	mov remainder2, edx                     ;//move the remainder from edx to remainder2
+
+				;//sum remainders; if the result is 0 then counter was the LCM of both numbers
+ 000000B7  A1 0000005B R	mov eax, remainder1                     ;//move remainder1 to eax
+ 000000BC  03 05 0000005F R	add eax, remainder2                     ;//sum remainder2 with eax
+
+				;//check if sum is still zero; if it is then counter is the LCM
+ 000000C2  83 F8 00		cmp eax, 0                              ;// compare the value of eax to 0
+ 000000C5  74 08		jz LCM                                  ;//if the compare was true jump to the LCM label
+ 000000C7  FF 05 00000057 R	inc counter                             ;//increment the counter
+ 000000CD  EB A2		jmp L1                                  ;//jump to the L1 label
+
+ 000000CF			LCM :
+				;//print message
+ 000000CF  BA 00000000		mov edx, 0                              ;//clean the edx register
+ 000000D4  BA 00000026 R	mov edx, OFFSET msgLCM                  ;//move the LCM message to the edx register
+ 000000D9  E8 00000000 E	call WriteString                        ;//write the value of the edx register to the screen
+ 000000DE  A1 00000057 R	mov eax, counter                        ;//move the value of the counter variable to the eax register
+ 000000E3  E8 00000000 E	call WriteDec                           ;//write the vlaue of the eax register to the screen
+ 000000E8  E8 00000000 E	call Crlf                               ;//right a line break
+ 000000ED  EB 00		jmp Return                              ;//jump to return
 
 
-				;//Setup map size and player location
-
- 00000044  A0 0000000C R	mov al, [buffer + 8]
- 00000049  8A 1D 0000000A R	mov bl, buffer[6]
- 0000004F  FC			cld
-
- 00000050  F3/ A4		rep movsb
-
- 00000052  E8 00000000 E	call WriteString
- 00000057  E8 00000000 E	call Crlf
-
- 0000005C  A1 00001396 R	mov eax, fileHandle
- 00000061  E8 00000000 E	call CloseFile
- 00000066  E8 00000000 E	call WaitMsg
+ 000000EF			Return :
+				;//return the state of the flags registers to what they were before the start of the function
+ 000000EF  9D			popfd
+ 000000F0  61			popad
+				ret
+ 000000F4			FindLeastCommonMultiple ENDP
 
 
+				;//------------------------------------------------------------------------------
+ 000000F4			IsPrimeNumber PROC USES esi ebx
+				;//
+				;// Description: Determines if the value stored in the AX register is a Prime
+				;//              Number or Not and prints to the screen. 
+				;// Uses: ESI, EBX, EFlags
+				;// Receives: AX
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
- 0000006B  C3			ret
- 0000006C			PrintMaze ENDP
+ 00000063			.data
+ 00000063 20 49 73 20 61	msgIsPrime byte " Is a Prime Number", 0
+	   20 50 72 69 6D
+	   65 20 4E 75 6D
+	   62 65 72 00
+ 00000076 20 49 73 20 6E	msgIsNotPrime byte " Is not a Prime Number", 0
+	   6F 74 20 61 20
+	   50 72 69 6D 65
+	   20 4E 75 6D 62
+	   65 72 00
 
- 0000006C			GetPlayerInput PROC;//Reads the input from the player
- 0000139A			.data
- 0000006C			.code
-				;//TODO(Nathan): Don't have a clue
- 0000006C  C3			ret
- 0000006D			GetPlayerInput ENDP
+ 0000008D 00000000		number dword 0
+ 00000091 00000000		tester dword 0
+ 000000F6			.code
+				;//save the contents of the flag registers
+ 000000F6  60			pushad
+ 000000F7  9C			pushfd
 
- 0000006D			MenuScreen PROC;
- 0000139A			.data
- 0000006D			.code
-				;/*TODO(Nathan) Task List in order of operations for Menu Screen
-				 ; *1. Clear Screen
-				 ; *2. Print Menu Items; Play, Options, Score List, Exit
-				 ; *3. Update graphical indicator of Select; more then likely this (->)
-				 ; *Notes: Read Player Input here?
-				 ; */
+ 000000F8  C7 05 00000091 R	mov tester, 2                           ;//set the tester value to 2, this is needed since the method is called twice
+	   00000002
+ 00000102  A3 0000008D R	mov number, eax                         ;//move the value of eax(ax) to number
 
- 0000006D  C3			ret
- 0000006E			MenuScreen ENDP
+ 00000107			L1 :
+ 00000107  A1 0000008D R	mov eax, number                         ;//move the value of number to eax
+ 0000010C  3B 05 00000091 R	cmp eax, tester                         ;//compare the value of eax to tester
+ 00000112  74 1A		je Prime                                ;//jump to Prime label if they are equal
 
- 0000006E			ScoreScreen PROC;
- 0000139A			.data
- 0000006E			.code
-				;/*TODO(Nathan) Task List in order of operations for Score Screen
-				 ; *1. Clear Screen
-				 ; *2. Read Score File
-				 ; *3. Print Scores onto Screen
-				 ; *4. Print Options for Return to Main Screen, Clear Score List
-				 ; *Notes: Read Player Input here?.                                                                                                           
-				 ; */
- 0000006E  C3			ret
- 0000006F			ScoreScreen ENDP
+ 00000114  BA 00000000		mov edx, 0                              ;//clean the edx register
+ 00000119  8B 1D 00000091 R	mov ebx, tester                         ;//set the ebx register to tester
+ 0000011F  F7 F3		div ebx                                 ;//divide eax with ebx
+ 00000121  83 FA 00		cmp edx, 0                              ;//compare the remainder to 0; if the remainder is 0 then the number is not prime
+ 00000124  74 23		jz NotPrime                             ;//jump to NotPrime label if the zero flag is set
+ 00000126  FF 05 00000091 R	inc tester                              ;//increment tester
+ 0000012C  EB D9		jmp L1                                  ;//jump to L1 flag
 
- 0000006F			SaveScore PROC;
- 0000139A			.data
- 0000006F			.code
-				;/*TODO(Nathan) Task List in order of operations for SaveScore
-				 ; *1. Clear Screen
-				 ; *2. Save Score to File
-				 ; */
- 0000006F  C3			ret
- 00000070			SaveScore ENDP
 
- 00000070			OptionsScreen PROC;
- 0000139A			.data
- 00000070			.code
-				;/*TODO(Nathan) Task List in order of operations for Options
-				 ; *1. Clear Screen
-				 ; *2. Enable Timer
-				 ; */
- 00000070  C3			ret
- 00000071			OptionsScreen ENDP
+ 0000012E			Prime :
+ 0000012E  A1 0000008D R	mov eax, number                         ;//move the value of number to eax
+ 00000133  E8 00000000 E	call WriteDec                           ;//write the value of eax to the console
+ 00000138  BA 00000063 R	mov edx, OFFSET msgIsPrime              ;//move the contents of msgIsPrime to edx
+ 0000013D  E8 00000000 E	call WriteString                        ;//write the value of edx to the console
+ 00000142  E8 00000000 E	call Crlf                               ;//write a Line Feed
+ 00000147  EB 1B		jmp Return                              ;//jump to return flag
 
- 00000071			UpdateGameInformation PROC
- 0000139A			.data
- 00000071			.code
-				;/*TODO(Nathan) Task List in order of operations for Update Game Information
-				 ; *1. Draw Time, Score, Player and Items onto Maze
-				 ; */
- 00000071  C3			ret
- 00000072			UpdateGameInformation ENDP
+ 00000149			NotPrime :
+ 00000149  A1 0000008D R	mov eax, number                         ;//move the value of number to eax
+ 0000014E  E8 00000000 E	call WriteDec                           ;//write the value of eax to the console
+ 00000153  BA 00000076 R	mov edx, OFFSET msgIsNotPrime           ;//move the contents of msgIsNotPrime to edx
+ 00000158  E8 00000000 E	call WriteString                        ;//write the value of edx to the console
+ 0000015D  E8 00000000 E	call Crlf                               ;//write a Line Feed
+ 00000162  EB 00		jmp Return                              ;//jump to return
 
+ 00000164			Return :
+
+				;//restore the Flag registers
+ 00000164  9D			popfd
+ 00000165  61			popad
+				ret
+ 00000169			IsPrimeNumber ENDP
 				end main
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/13/15 14:47:09
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/12/15 09:39:27
 main.asm						     Symbols 2 - 1
 
 
@@ -308,8 +392,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 0000139A Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000072 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000095 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000169 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -328,6 +412,10 @@ DumpRegs . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ExitProcess  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FileTimeToDosDateTime  . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FileTimeToSystemTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+FindLeastCommonMultiple  . . . .	P Near	 00000063 _TEXT	Length= 00000091 Public STDCALL
+  L1 . . . . . . . . . . . . . .	L Near	 00000071 _TEXT	
+  LCM  . . . . . . . . . . . . .	L Near	 000000CF _TEXT	
+  Return . . . . . . . . . . . .	L Near	 000000EF _TEXT	
 FlushConsoleInputBuffer  . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FormatMessageA . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetCommandLineA  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -344,12 +432,12 @@ GetLocalTime . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetMaxXY . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetMseconds  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetNumberOfConsoleInputEvents  .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-GetPlayerInput . . . . . . . . .	P Near	 0000006C _TEXT	Length= 00000001 Public STDCALL
 GetProcessHeap . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTextColor . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTickCount . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+GetUserInput . . . . . . . . . .	P Near	 00000032 _TEXT	Length= 00000031 Public STDCALL
 Gotoxy . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapAlloc  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -357,18 +445,19 @@ HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+IsPrimeNumber  . . . . . . . . .	P Near	 000000F4 _TEXT	Length= 00000075 Public STDCALL
+  L1 . . . . . . . . . . . . . .	L Near	 00000107 _TEXT	
+  Prime  . . . . . . . . . . . .	L Near	 0000012E _TEXT	
+  NotPrime . . . . . . . . . . .	L Near	 00000149 _TEXT	
+  Return . . . . . . . . . . . .	L Near	 00000164 _TEXT	
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-MainGameLoop . . . . . . . . . .	P Near	 0000000C _TEXT	Length= 00000001 Public STDCALL
-MenuScreen . . . . . . . . . . .	P Near	 0000006D _TEXT	Length= 00000001 Public STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBoxAsk  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBox . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 OpenInputFile  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-OptionsScreen  . . . . . . . . .	P Near	 00000070 _TEXT	Length= 00000001 Public STDCALL
 ParseDecimal32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 PeekConsoleInputA  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-PrintMaze  . . . . . . . . . . .	P Near	 0000000D _TEXT	Length= 0000005F Public STDCALL
 Random32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 RandomRange  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Randomize  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -384,8 +473,6 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-SaveScore  . . . . . . . . . . .	P Near	 0000006F _TEXT	Length= 00000001 Public STDCALL
-ScoreScreen  . . . . . . . . . .	P Near	 0000006E _TEXT	Length= 00000001 Public STDCALL
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -405,7 +492,6 @@ Str_length . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 Str_trim . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_ucase  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SystemTimeToFileTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-UpdateGameInformation  . . . . .	P Near	 00000071 _TEXT	Length= 00000001 Public STDCALL
 WaitMsg  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBinB  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBin . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -424,7 +510,7 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000000C Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000032 Public STDCALL
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -444,7 +530,6 @@ Symbols:
 @fardata . . . . . . . . . . . .	Text   	 FLAT
 @stack . . . . . . . . . . . . .	Text   	 FLAT
 ALT_MASK . . . . . . . . . . . .	Number	 00000003h   
-BUFFER_SIZE  . . . . . . . . . .	Number	 00001388h   
 CAPSLOCK_ON  . . . . . . . . . .	Number	 00000080h   
 CREATE_ALWAYS  . . . . . . . . .	Number	 00000002h   
 CREATE_NEW . . . . . . . . . . .	Number	 00000001h   
@@ -647,11 +732,9 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
-buffer . . . . . . . . . . . . .	Byte	 00000004 _DATA	
+counter  . . . . . . . . . . . .	DWord	 00000057 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
-fileHandle . . . . . . . . . . .	DWord	 00001396 _DATA	
-fileName . . . . . . . . . . . .	Byte	 0000138C _DATA	
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
@@ -661,11 +744,18 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
-mapHeight  . . . . . . . . . . .	Byte	 00000001 _DATA	
-mapWidth . . . . . . . . . . . .	Byte	 00000000 _DATA	
-playerX  . . . . . . . . . . . .	Byte	 00000002 _DATA	
-playerY  . . . . . . . . . . . .	Byte	 00000003 _DATA	
+msgInputNumber1  . . . . . . . .	Byte	 00000004 _DATA	
+msgInputNumber2  . . . . . . . .	Byte	 00000015 _DATA	
+msgIsNotPrime  . . . . . . . . .	Byte	 00000076 _DATA	
+msgIsPrime . . . . . . . . . . .	Byte	 00000063 _DATA	
+msgLCM . . . . . . . . . . . . .	Byte	 00000026 _DATA	
+number1  . . . . . . . . . . . .	Word	 00000000 _DATA	
+number2  . . . . . . . . . . . .	Word	 00000002 _DATA	
+number . . . . . . . . . . . . .	DWord	 0000008D _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
+remainder1 . . . . . . . . . . .	DWord	 0000005B _DATA	
+remainder2 . . . . . . . . . . .	DWord	 0000005F _DATA	
+tester . . . . . . . . . . . . .	DWord	 00000091 _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
