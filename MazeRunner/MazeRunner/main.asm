@@ -23,8 +23,13 @@ playerX BYTE ?
 playerY BYTE ?
 .code
 
-;// Application Entry Point
+;//------------------------------------------------------------------------------
 main proc
+;//
+;// Description: Main Application Entry Point
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 
 ;/*TODO(Nathan) Task List in order of operations for Game Start
 ; *1. Clear Screen
@@ -36,38 +41,55 @@ main proc
 ; *7. Exit: If use selects Exit -> quit the application
 ; */
 
+MainScreen:
+call MenuScreen
 
+cmp ax, 1
+jz StartGame
+cmp ax, 2
+jz ShowOptions
+cmp ax, 3
+jz ShowScore
+cmp ax, 4
+jz ExitProgram
+
+jmp MainScreen
+
+StartGame:
 call PrintMaze
+call MainGameLoop
 
+jmp MainScreen
 
+ShowScore:
+call ScoreScreen
 
+jmp MainScreen
 
+ShowOptions:
+call OptionsScreen
+
+jmp MainScreen
+
+ExitProgram:
 invoke ExitProcess, 0
 main endp
 
 ;//Procedures
+;//------------------------------------------------------------------------------
+PrintMaze PROC
+;//
+;// Description: Reads the Map from a file and prints it to the screen
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 
-MainGameLoop PROC
-.data
-.code
-;/*TODO(Nathan) Task List in order of operations for Main Game Loop
- ; *1. Clear Screen
- ; *2. Set Player Name
- ; *3. Call PrintMaze -> Draw the Map onto the screen;
- ; *4. Call GetPlayerInput -> Get input from the player as to what to do; How to move; Timer needs to keep updating even while waiting for player input
- ; *5. Call UpdateGameInformation -> Updates the Score, Timer, Player, and Items
- ; *6. If game reaches defined End points return to caller
- ; */
-ret
-MainGameLoop ENDP
-
-PrintMaze PROC;
 .data
 buffer Byte BUFFER_SIZE DUP(? )
 fileName byte "level.dat", 0
 fileHandle HANDLE ?
 .code
-
+call Clrscr
 mov edx, OFFSET fileName
 call OpenInputFile
 mov fileHandle, eax
@@ -86,59 +108,99 @@ mov ecx, SIZEOF buffer
 
 
 ;//Setup map size and player location
-
-mov al, buffer[5]
-mov bl, buffer[6]
-cld
-
-rep movsb
-
 call WriteString
 call Crlf
 
 mov eax, fileHandle
 call CloseFile
-call WaitMsg
-
-
 
 ret
 PrintMaze ENDP
 
-GetPlayerInput PROC;//Reads the input from the player
+;//------------------------------------------------------------------------------
+MainGameLoop PROC
+;//
+;// Description: The Main Game Loop
+;// Uses: 
+;// Receives:
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 .data
 .code
-;//TODO(Nathan): Don't have a clue
-ret
-GetPlayerInput ENDP
+call WaitMsg
 
+;//TODO(nathan): 
+;// Update Clock
+;// get user input
+;// move player
+;// check if at exit
+;// update score
+
+ret
+MainGameLoop ENDP
+
+;//------------------------------------------------------------------------------
 MenuScreen PROC;
+;//
+;// Description: Prints the Main Menu and Reads user input
+;// Uses: 
+;// Receives: Nothing
+;// Returns: AX
+;//------------------------------------------------------------------------------
 .data
+msgMenu byte "1: Play", 13, 10, "2: Options", 13, 10, "3: Scores", 13, 10, "4: Exit", 13, 10, 0
+
 .code
-;/*TODO(Nathan) Task List in order of operations for Menu Screen
- ; *1. Clear Screen
- ; *2. Print Menu Items; Play, Options, Score List, Exit
- ; *3. Update graphical indicator of Select; more then likely this (->)
- ; *Notes: Read Player Input here?
- ; */
+xor eax, eax
+xor edx, edx
+
+call Clrscr
+
+mov edx, OFFSET msgMenu
+call WriteString
+call Crlf
+call readInt
 
 ret
 MenuScreen ENDP
 
-ScoreScreen PROC;
+;//------------------------------------------------------------------------------
+ScoreScreen PROC
+;//
+;// Description: Reads and Displays the Scores from a File
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 .data
+msgScoreTitle byte "Scores: ", 13, 10, 0
+
 .code
+xor eax, eax
+xor edx, edx
+
+call Clrscr
+
+mov edx, OFFSET msgScoreTitle
+call WriteString
+
+call WaitMsg
 ;/*TODO(Nathan) Task List in order of operations for Score Screen
  ; *1. Clear Screen
  ; *2. Read Score File
  ; *3. Print Scores onto Screen
  ; *4. Print Options for Return to Main Screen, Clear Score List
- ; *Notes: Read Player Input here?.                                                                                                           
+ ; *Notes: Read Player Input here?.
  ; */
 ret
 ScoreScreen ENDP
 
+;//------------------------------------------------------------------------------
 SaveScore PROC;
+;//
+;// Description: Saves the Score and Completion Time to a file 
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 .data
 .code
 ;/*TODO(Nathan) Task List in order of operations for SaveScore
@@ -148,9 +210,28 @@ SaveScore PROC;
 ret
 SaveScore ENDP
 
+;//------------------------------------------------------------------------------
 OptionsScreen PROC;
+;//
+;// Description: Displays the Options and Reads Input from the User 
+;//              and Updates global flags
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 .data
+msgOptions byte "Options", 0
+
 .code
+xor eax, eax
+xor edx, edx
+
+call Clrscr
+
+mov edx, OFFSET msgOptions
+call WriteString
+
+call WaitMsg
+
 ;/*TODO(Nathan) Task List in order of operations for Options
  ; *1. Clear Screen
  ; *2. Enable Timer
@@ -158,7 +239,13 @@ OptionsScreen PROC;
 ret
 OptionsScreen ENDP
 
+;//------------------------------------------------------------------------------
 UpdateGameInformation PROC
+;//
+;// Description: Don't Know May Not Be Used;
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
 .data
 .code
 ;/*TODO(Nathan) Task List in order of operations for Update Game Information
