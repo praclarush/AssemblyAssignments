@@ -75,15 +75,14 @@ main proc
 
 ;//Problem 1
 Question1:
-xor eax, eax
-mov eax, RowSizeA
+invoke Str_length, addr strWord1
+mov nLength, eax
+invoke Strnicmp, addr strWord1, addr strWord1, nLength
+invoke Strnicmp, addr strWord1, addr strWord2, nLength
+invoke Strnicmp, addr strWord3, addr strWord4, nLength
+call WaitMsg
 
-;//invoke Str_length, addr strWord1
-;//mov nLength, eax
-;//invoke Strnicmp, addr strWord1, addr strWord1, nLength
-;//invoke Strnicmp, addr strWord1, addr strWord2, nLength
-;//invoke Strnicmp, addr strWord3, addr strWord4, nLength
-;//call WaitMsg
+call Crlf
 
 ;//Problem 2
 Question2:

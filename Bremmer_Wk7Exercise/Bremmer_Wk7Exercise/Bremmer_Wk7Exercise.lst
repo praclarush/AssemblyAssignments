@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/20/15 11:20:18
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/20/15 12:43:37
 main.asm						     Page 1 - 1
 
 
@@ -98,6 +98,15 @@ main.asm						     Page 1 - 1
  00000060  00000009 [		matrixC word 9 dup(0)
 	    0000
 	   ]
+ 00000072 54 68 65 20 70	msgProduct byte "The product of Matrix A and Matrix B is: ", 13, 10, 0
+	   72 6F 64 75 63
+	   74 20 6F 66 20
+	   4D 61 74 72 69
+	   78 20 41 20 61
+	   6E 64 20 4D 61
+	   74 72 69 78 20
+	   42 20 69 73 3A
+	   20 0D 0A 00
 
  00000000			.code
 
@@ -112,138 +121,142 @@ main.asm						     Page 1 - 1
 
 				;//Problem 1
  00000000			Question1:
- 00000000  33 C0		xor eax, eax
- 00000002  B8 0000000C		mov eax, RowSizeA
+				invoke Str_length, addr strWord1
+ 0000000A  A3 00000014 R	mov nLength, eax
+				invoke Strnicmp, addr strWord1, addr strWord1, nLength
+				invoke Strnicmp, addr strWord1, addr strWord2, nLength
+				invoke Strnicmp, addr strWord3, addr strWord4, nLength
+ 0000004E  E8 00000000 E	call WaitMsg
 
-				;//invoke Str_length, addr strWord1
-				;//mov nLength, eax
-				;//invoke Strnicmp, addr strWord1, addr strWord1, nLength
-				;//invoke Strnicmp, addr strWord1, addr strWord2, nLength
-				;//invoke Strnicmp, addr strWord3, addr strWord4, nLength
-				;//call WaitMsg
+ 00000053  E8 00000000 E	call Crlf
 
 				;//Problem 2
- 00000007			Question2:
+ 00000058			Question2:
+ 00000058  33 D2		xor edx, edx
+ 0000005A  BA 00000072 R	mov edx, offset msgProduct
+ 0000005F  E8 00000000 E	call WriteString
+
 				invoke MutiplyMatrixs, addr matrixA, addr matrixB, 3, 3
- 0000001A  E8 00000000 E	call WaitMsg
+ 00000077  E8 00000000 E	call WaitMsg
 
 				invoke ExitProcess, 0
- 00000026			main endp
+ 00000083			main endp
 
 				;//------------------------------------------------------------------------------
- 00000026			MutiplyMatrixs proc, mtxA:dword, mtxB:dword, nRows : dword, nCols : dword
+ 00000083			MutiplyMatrixs proc, mtxA:dword, mtxB:dword, nRows : dword, nCols : dword
 				;//
-				;// Description:
+				;// Description: Multiples two matrixes
 				;// Uses:
-				;// Receives:
-				;// Returns:
+				;// Receives:the addresses to Matrix A and Matrix B, the number of columns and rows
+				;// Returns:Nothing
 				;//------------------------------------------------------------------------------
- 00000072			.data
- 00000072 20 00			space byte ' ', 0
+ 0000009E			.data
+ 0000009E 20 00			space byte ' ', 0
+ 000000A0 00000000		workingRow dword 0
+ 000000A4 00000000		workingCol dword 0
+ 000000A8 00000000		rowCounter dword 0
+ 000000AC 00000000		colCounter dword 0
+ 000000B0 00000000		colSize dword 0
+ 000000B4 00000000		rowSize dword 0
+ 000000B8 00000000		counter dword 0
+ 000000BC 00000000		sum dword 0
 
- 00000074 00000000		workingRow dword 0
- 00000078 00000000		workingCol dword 0
- 0000007C 00000000		rowCounter dword 0
- 00000080 00000000		colCounter dword 0
- 00000084 00000000		colSize dword 0
- 00000088 00000000		rowSize dword 0
- 0000008C 00000000		counter dword 0
- 00000090 00000000		sum dword 0
-
- 00000029			.code
- 00000029  E8 00000000 E	call  Crlf
- 0000002E  C7 05 00000074 R	mov  workingRow, 0
+ 00000086			.code
+				;//reset variables for call
+ 00000086  C7 05 000000A0 R	mov workingRow, 0
+	   00000000
+ 00000090  C7 05 000000A4 R	mov workingCol, 0
+	   00000000
+ 0000009A  C7 05 000000A8 R	mov rowCounter, 0
+	   00000000
+ 000000A4  C7 05 000000AC R	mov colCounter, 0
+	   00000000
+ 000000AE  C7 05 000000B0 R	mov colSize, 0
+	   00000000
+ 000000B8  C7 05 000000B4 R	mov rowSize, 0
+	   00000000
+ 000000C2  C7 05 000000B8 R	mov counter, 0
+	   00000000
+ 000000CC  C7 05 000000BC R	mov sum, 0
 	   00000000
 
 				;//calc memory places for columns
- 00000038  33 C0		xor eax, eax
- 0000003A  33 DB		xor ebx, ebx
- 0000003C  B8 00000003		mov eax, 3
- 00000041  8B 5D 14		mov ebx, nCols
- 00000044  F7 E3		mul ebx
- 00000046  A3 00000084 R	mov colSize, eax
-
+ 000000D6  33 C0		xor eax, eax                    ;//clean register
+ 000000D8  33 DB		xor ebx, ebx                    ;//clean register
+ 000000DA  B8 00000003		mov eax, 3                      ;//set the value of eax to 3
+ 000000DF  8B 5D 14		mov ebx, nCols                  ;//mov the value of nCols to ebx
+ 000000E2  F7 E3		mul ebx                         ;//multiply the value of ebx by eax
+ 000000E4  A3 000000B0 R	mov colSize, eax                ;//set the product in eax to colSize
 
 				;//calc memory places for rows
- 0000004B  33 C0		xor eax, eax
- 0000004D  33 DB		xor ebx, ebx
- 0000004F  B8 00000008		mov eax, 8
- 00000054  8B 5D 10		mov ebx, nRows
- 00000057  F7 E3		mul ebx
- 00000059  A3 00000088 R	mov rowSize, eax
+ 000000E9  33 C0		xor eax, eax                    ;//clean register
+ 000000EB  33 DB		xor ebx, ebx                    ;//clean register
+ 000000ED  B8 00000008		mov eax, 8                      ;//set the value of eax to 8
+ 000000F2  8B 5D 10		mov ebx, nRows                  ;//mov the value of nCols to ebx
+ 000000F5  F7 E3		mul ebx                         ;//multiply the value of ebx by eax
+ 000000F7  A3 000000B4 R	mov rowSize, eax                ;//set the product in eax to colSize
 
-
-
- 0000005E			NextRow:
- 0000005E  C7 05 00000078 R	mov workingCol, 0
+ 000000FC			NextRow:
+ 000000FC  C7 05 000000A4 R	mov workingCol, 0               ;//set the working column to the first column of the row
 	   00000000
 
- 00000068			NextCol :
-				;//Inner loop
-
- 00000068  A1 00000074 R	mov eax, workingRow;//rowcounter
- 0000006D  8B 1D 00000078 R	mov ebx, workingCol;//colCounter
-
- 00000073  A3 0000007C R	mov rowCounter, eax
- 00000078  89 1D 00000080 R	mov colCounter, ebx
-
- 0000007E  C7 05 0000008C R	mov counter, 0
+ 00000106			NextCol :
+ 00000106  A1 000000A0 R	mov eax, workingRow             ;//move the value of workingRow into the eax register
+ 0000010B  8B 1D 000000A4 R	mov ebx, workingCol             ;//move the value of the workingCol into the ebx register
+ 00000111  A3 000000A8 R	mov rowCounter, eax             ;//set the rowCounter to the value of the eax register
+ 00000116  89 1D 000000AC R	mov colCounter, ebx             ;//set the colCounter to thevalue of the ebx revister
+ 0000011C  C7 05 000000B8 R	mov counter, 0                  ;//zero the counter for new operations
 	   00000000
- 00000088  C7 05 00000090 R	mov sum, 0
+ 00000126  C7 05 000000BC R	mov sum, 0                      ;//zero the sum for new operations
 	   00000000
 
- 00000092			Next:
-				;//multiply items
- 00000092  8B 75 08		mov esi, mtxA
- 00000095  03 35 0000007C R	add esi, rowCounter
- 0000009B  8B 06		mov eax, [esi]
+ 00000130			Next:
+				;//multiply
+ 00000130  8B 75 08		mov esi, mtxA                   ;//move MtxA to the esi register
+ 00000133  03 35 000000A8 R	add esi, rowCounter             ;//mov the pointer in memory by the amount in rowCounter
+ 00000139  8B 06		mov eax, [esi]                  ;//move the value at the pointer location to the eax register
+ 0000013B  8B 75 0C		mov esi, mtxB                   ;//move MtxB to the esi register
+ 0000013E  03 35 000000AC R	add esi, colCounter             ;//mov the point in memory by the amount in the colCounter
+ 00000144  8B 1E		mov ebx, [esi]                  ;//mov the value at the pointer location to the ebx register
+ 00000146  F7 E3		mul ebx                         ;//multiply the ebx register by the eax register
 
- 0000009D  8B 75 0C		mov esi, mtxB
- 000000A0  03 35 00000080 R	add esi, colCounter
- 000000A6  8B 1E		mov ebx, [esi]
-
- 000000A8  F7 E3mul ebx
 				;//Add 
- 000000AA  01 05 00000090 R	add sum, eax
- 000000B0  83 05 0000007C R	add rowCounter, 4
+ 00000148  01 05 000000BC R	add sum, eax                    ;//add the value of eax to the value stored in sum
+ 0000014E  83 05 000000A8 R	add rowCounter, 4               ;//move the rowCounter forward 4 bytes
 	   04
- 000000B7  83 05 00000080 R	add colCounter, 12
+ 00000155  83 05 000000AC R	add colCounter, 12              ;//move the colCounter forward 12 bytes
 	   0C
-
- 000000BE  FF 05 0000008C R	inc counter
- 000000C4  83 3D 0000008C R	cmp counter, 2
+ 0000015C  FF 05 000000B8 R	inc counter                     ;//increment the counter
+ 00000162  83 3D 000000B8 R	cmp counter, 2                  ;//compare the counter to the value 2
 	   02
- 000000CB  7E C5		jle Next
+ 00000169  7E C5		jle Next                        ;//jump if the value in counter is less then or equal to 2 this is because we only want to do this operation 3 times note(This is bad, should fix this)
 
- 000000CD  A1 00000090 R	mov eax, sum
+ 0000016B			printValue :
+ 0000016B  A1 000000BC R	mov eax, sum                    ;//move the value of sum into eax for printing to the screen
+ 00000170  E8 00000000 E	call WriteDec                   ;//write the value of eax to the screen
+ 00000175  BA 0000009E R	mov edx, offset space           ;//set edx eqaul to the offset of space
+ 0000017A  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
 
- 000000D2			printValue :
- 000000D2  E8 00000000 E	call WriteDec
- 000000D7  BA 00000072 R	mov edx, offset space
- 000000DC  E8 00000000 E	call WriteString
-
- 000000E1  83 05 00000078 R	add workingCol, 4
+ 0000017F  83 05 000000A4 R	add workingCol, 4               ;//increase the value of workingCol by 4
 	   04
- 000000E8  A1 00000078 R	mov eax, workingCol
- 000000ED  3B 05 00000084 R	cmp eax, colSize
- 000000F3  0F 8E FFFFFF6F	jle NextCol
-				;//end inner loop
+ 00000186  A1 000000A4 R	mov eax, workingCol             ;//move the value of working col to eax
+ 0000018B  3B 05 000000B0 R	cmp eax, colSize                ;//compare the value of eax to colSize
+ 00000191  0F 8E FFFFFF6F	jle NextCol                     ;//jump if the value of eax is less then or equal to colSize
+ 00000197  E8 00000000 E	call Crlf                       ;//print a new line
 
- 000000F9  E8 00000000 E	call Crlf
-
- 000000FE  83 05 00000074 R	add workingRow, 12
+ 0000019C  83 05 000000A0 R	add workingRow, 12              ;//increase the value of workingRow by 12
 	   0C
- 00000105  A1 00000074 R	mov eax, workingRow
- 0000010A  3B 05 00000088 R	cmp eax, rowSize
- 00000110  0F 8E FFFFFF48	jle NextRow
+ 000001A3  A1 000000A0 R	mov eax, workingRow             ;//move the value of workingRow to eax
+ 000001A8  3B 05 000000B4 R	cmp eax, rowSize                ;//compare the value of eax to rowSize
+ 000001AE  0F 8E FFFFFF48	jle NextRow                     ;//jump if the value of eax is less then or equal to rowSize
 
- 00000116  E8 00000000 E	call Crlf
+ 000001B4  E8 00000000 E	call Crlf                       ;//write a new line after everything is done
 
 				ret
- 0000011F			MutiplyMatrixs endp
+ 000001BD			MutiplyMatrixs endp
 
 				;//------------------------------------------------------------------------------
- 0000011F			TransposeMatrix proc, mtxA:word, mtxB : word
+ 000001BD			TransposeMatrix proc, mtxA:word, mtxB : word
 				;//
 				;// Description:
 				;// Uses:
@@ -253,12 +266,12 @@ main.asm						     Page 1 - 1
 
 
 				ret
- 00000126			TransposeMatrix endp
-main.asm(209) : warning A6004:procedure argument or local not referenced : mtxA
-main.asm(209) : warning A6004:procedure argument or local not referenced : mtxB
+ 000001C4			TransposeMatrix endp
+main.asm(207) : warning A6004:procedure argument or local not referenced : mtxA
+main.asm(207) : warning A6004:procedure argument or local not referenced : mtxB
 
 				;//------------------------------------------------------------------------------
- 00000126			Strnicmp proc, strA:dword, strB:dword, nBytes:dword
+ 000001C4			Strnicmp proc, strA:dword, strB:dword, nBytes:dword
 				;//
 				;// Description: Compares two strings writing to the screen if the strings 
 				;//              are equal or not equal or if the length is greater then 20
@@ -267,17 +280,17 @@ main.asm(209) : warning A6004:procedure argument or local not referenced : mtxB
 				;// Returns: none
 				;//------------------------------------------------------------------------------
 
- 00000094			.data
- 00000094 20 61 72 65 20	msgEqual byte " are equal", 13, 10, 0
+ 000000C0			.data
+ 000000C0 20 61 72 65 20	msgEqual byte " are equal", 13, 10, 0
 	   65 71 75 61 6C
 	   0D 0A 00
- 000000A1 20 61 72 65 20	msgNotEqual byte " are not equal", 13, 10, 0
+ 000000CD 20 61 72 65 20	msgNotEqual byte " are not equal", 13, 10, 0
 	   6E 6F 74 20 65
 	   71 75 61 6C 0D
 	   0A 00
- 000000B2 20 61 6E 64 20	msgAnd byte " and ", 0
+ 000000DE 20 61 6E 64 20	msgAnd byte " and ", 0
 	   00
- 000000B8 74 68 65 20 6C	msgLengthError byte "the length of nBytes is greater then 20", 13, 10, 0
+ 000000E4 74 68 65 20 6C	msgLengthError byte "the length of nBytes is greater then 20", 13, 10, 0
 	   65 6E 67 74 68
 	   20 6F 66 20 6E
 	   42 79 74 65 73
@@ -287,62 +300,58 @@ main.asm(209) : warning A6004:procedure argument or local not referenced : mtxB
 	   6E 20 32 30 0D
 	   0A 00
 
- 00000129			.code
+ 000001C7			.code
 
 				;//clean registers for use
- 00000129  33 F6		xor esi,esi
- 0000012B  33 FF		xor edi,edi
- 0000012D  33 C9		xor ecx, ecx
+ 000001C7  33 F6		xor esi,esi
+ 000001C9  33 FF		xor edi,edi
+ 000001CB  33 C9		xor ecx, ecx
 
- 0000012F  8B 75 08		mov esi, strA;//move the value of strA into esi
- 00000132  8B 7D 0C		mov edi, strB;//move the value of strB into edi
- 00000135  8B 4D 10		mov ecx, nBytes;//move the value of nBytes into ecx
+ 000001CD  8B 75 08		mov esi, strA                   ;//move the value of strA into esi
+ 000001D0  8B 7D 0C		mov edi, strB                   ;//move the value of strB into edi
+ 000001D3  8B 4D 10		mov ecx, nBytes                 ;//move the value of nBytes into ecx
 
- 00000138  83 F9 14		cmp ecx, 20
- 0000013B  74 53		jz stringToLong
+ 000001D6  83 F9 14		cmp ecx, 20                     ;//compare the value of ecx to 20(max length)
+ 000001D9  74 53		jz stringToLong                 ;//jump if zero
 
 
- 0000013D  FC			cld;//Clear the direction flag in prep for looping through strings
- 0000013E  F3/ A7		repe cmpsd;//compare each byte in esi and edi 
- 00000140  74 02		jz equal
- 00000142  75 26		jnz notEqual
+ 000001DB  FC			cld                             ;//Clear the direction flag in prep for looping through strings
+ 000001DC  F3/ A7		repe cmpsd                      ;//compare each byte in esi and edi 
+ 000001DE  74 02		jz equal                        ;//jump if the two registers are equal
+ 000001E0  75 26		jnz notEqual                    ;//jump if the two registers are not equal
 
- 00000144			equal:
- 00000144  8B 55 08		mov edx, strA
- 00000147  E8 00000000 E	call WriteString
- 0000014C  BA 000000B2 R	mov edx, OFFSET msgAnd
- 00000151  E8 00000000 E	call WriteString
- 00000156  8B 55 0C		mov edx, strB
- 00000159  E8 00000000 E	call WriteString
- 0000015E  BA 00000094 R	mov edx, OFFSET msgEqual
- 00000163  E8 00000000 E	call WriteString
- 00000168  EB 32		jmp Return
+ 000001E2			equal:
+ 000001E2  8B 55 08		mov edx, strA                   ;//move the value of strA to edx
+ 000001E5  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 000001EA  BA 000000DE R	mov edx, OFFSET msgAnd          ;//move the offset to msgAnd to edx
+ 000001EF  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 000001F4  8B 55 0C		mov edx, strB                   ;//write the value of strB to the screen
+ 000001F7  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 000001FC  BA 000000C0 R	mov edx, OFFSET msgEqual        ;//move the offset of msgEqual to edx
+ 00000201  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 00000206  EB 32		jmp Return                      ;//jump to exit
 
- 0000016A			notEqual:
- 0000016A  8B 55 08		mov edx, strA
- 0000016D  E8 00000000 E	call WriteString
- 00000172  BA 000000B2 R	mov edx, OFFSET msgAnd
- 00000177  E8 00000000 E	call WriteString
- 0000017C  8B 55 0C		mov edx, strB
- 0000017F  E8 00000000 E	call WriteString
- 00000184  BA 000000A1 R	mov edx, OFFSET msgNotEqual
- 00000189  E8 00000000 E	call WriteString
- 0000018E  EB 0C		jmp Return
+ 00000208			notEqual:
+ 00000208  8B 55 08		mov edx, strA                   ;//move the value of strA to edx
+ 0000020B  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 00000210  BA 000000DE R	mov edx, OFFSET msgAnd          ;//move the offset to msgAnd to edx
+ 00000215  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 0000021A  8B 55 0C		mov edx, strB                   ;//write the value of strB to the screen
+ 0000021D  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 00000222  BA 000000CD R	mov edx, OFFSET msgNotEqual     ;//move the offset of msgEqual to edx
+ 00000227  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 0000022C  EB 0C		jmp Return;//jump to exit
 
- 00000190			stringToLong:
- 00000190  BA 000000B8 R	mov edx, OFFSET msgLengthError
- 00000195  E8 00000000 E	call WriteString
- 0000019A  EB 00		jmp Return
+ 0000022E			stringToLong:
+ 0000022E  BA 000000E4 R	mov edx, OFFSET msgLengthError  ;//move the offset of msgLengthError to edx
+ 00000233  E8 00000000 E	call WriteString                ;//write the value of edx to the screen
+ 00000238  EB 00		jmp Return                      ;//jump to exit
 
- 0000019C			Return:
+ 0000023A			Return:
 				 ret
- 000001A0			Strnicmp endp
-
-
-
+ 0000023E			Strnicmp endp
 				end main
-
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/20/15 11:20:18
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/20/15 12:43:37
 main.asm						     Symbols 2 - 1
 
 
@@ -454,8 +463,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000000E2 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000001A0 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 0000010E Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 0000023E Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -506,15 +515,15 @@ LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBoxAsk  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBox . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-MutiplyMatrixs . . . . . . . . .	P Near	 00000026 _TEXT	Length= 000000F9 Public STDCALL
+MutiplyMatrixs . . . . . . . . .	P Near	 00000083 _TEXT	Length= 0000013A Public STDCALL
   mtxA . . . . . . . . . . . . .	DWord	 bp + 00000008
   mtxB . . . . . . . . . . . . .	DWord	 bp + 0000000C
   nRows  . . . . . . . . . . . .	DWord	 bp + 00000010
   nCols  . . . . . . . . . . . .	DWord	 bp + 00000014
-  NextRow  . . . . . . . . . . .	L Near	 0000005E _TEXT	
-  NextCol  . . . . . . . . . . .	L Near	 00000068 _TEXT	
-  Next . . . . . . . . . . . . .	L Near	 00000092 _TEXT	
-  printValue . . . . . . . . . .	L Near	 000000D2 _TEXT	
+  NextRow  . . . . . . . . . . .	L Near	 000000FC _TEXT	
+  NextCol  . . . . . . . . . . .	L Near	 00000106 _TEXT	
+  Next . . . . . . . . . . . . .	L Near	 00000130 _TEXT	
+  printValue . . . . . . . . . .	L Near	 0000016B _TEXT	
 OpenInputFile  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseDecimal32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -552,16 +561,16 @@ Str_copy . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 Str_length . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_trim . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_ucase  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Strnicmp . . . . . . . . . . . .	P Near	 00000126 _TEXT	Length= 0000007A Public STDCALL
+Strnicmp . . . . . . . . . . . .	P Near	 000001C4 _TEXT	Length= 0000007A Public STDCALL
   strA . . . . . . . . . . . . .	DWord	 bp + 00000008
   strB . . . . . . . . . . . . .	DWord	 bp + 0000000C
   nBytes . . . . . . . . . . . .	DWord	 bp + 00000010
-  equal  . . . . . . . . . . . .	L Near	 00000144 _TEXT	
-  notEqual . . . . . . . . . . .	L Near	 0000016A _TEXT	
-  stringToLong . . . . . . . . .	L Near	 00000190 _TEXT	
-  Return . . . . . . . . . . . .	L Near	 0000019C _TEXT	
+  equal  . . . . . . . . . . . .	L Near	 000001E2 _TEXT	
+  notEqual . . . . . . . . . . .	L Near	 00000208 _TEXT	
+  stringToLong . . . . . . . . .	L Near	 0000022E _TEXT	
+  Return . . . . . . . . . . . .	L Near	 0000023A _TEXT	
 SystemTimeToFileTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-TransposeMatrix  . . . . . . . .	P Near	 0000011F _TEXT	Length= 00000007 Public STDCALL
+TransposeMatrix  . . . . . . . .	P Near	 000001BD _TEXT	Length= 00000007 Public STDCALL
   mtxA . . . . . . . . . . . . .	Word	 bp + 00000008
   mtxB . . . . . . . . . . . . .	Word	 bp + 0000000C
 WaitMsg  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -582,9 +591,9 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000026 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000083 Public STDCALL
   Question1  . . . . . . . . . .	L Near	 00000000 _TEXT	
-  Question2  . . . . . . . . . .	L Near	 00000007 _TEXT	
+  Question2  . . . . . . . . . .	L Near	 00000058 _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -808,9 +817,9 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
-colCounter . . . . . . . . . . .	DWord	 00000080 _DATA	
-colSize  . . . . . . . . . . . .	DWord	 00000084 _DATA	
-counter  . . . . . . . . . . . .	DWord	 0000008C _DATA	
+colCounter . . . . . . . . . . .	DWord	 000000AC _DATA	
+colSize  . . . . . . . . . . . .	DWord	 000000B0 _DATA	
+counter  . . . . . . . . . . . .	DWord	 000000B8 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
@@ -825,23 +834,24 @@ magenta  . . . . . . . . . . . .	Number	 00000005h
 matrixA  . . . . . . . . . . . .	DWord	 00000018 _DATA	
 matrixB  . . . . . . . . . . . .	DWord	 0000003C _DATA	
 matrixC  . . . . . . . . . . . .	Word	 00000060 _DATA	
-msgAnd . . . . . . . . . . . . .	Byte	 000000B2 _DATA	
-msgEqual . . . . . . . . . . . .	Byte	 00000094 _DATA	
-msgLengthError . . . . . . . . .	Byte	 000000B8 _DATA	
-msgNotEqual  . . . . . . . . . .	Byte	 000000A1 _DATA	
+msgAnd . . . . . . . . . . . . .	Byte	 000000DE _DATA	
+msgEqual . . . . . . . . . . . .	Byte	 000000C0 _DATA	
+msgLengthError . . . . . . . . .	Byte	 000000E4 _DATA	
+msgNotEqual  . . . . . . . . . .	Byte	 000000CD _DATA	
+msgProduct . . . . . . . . . . .	Byte	 00000072 _DATA	
 nLength  . . . . . . . . . . . .	DWord	 00000014 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
-rowCounter . . . . . . . . . . .	DWord	 0000007C _DATA	
-rowSize  . . . . . . . . . . . .	DWord	 00000088 _DATA	
-space  . . . . . . . . . . . . .	Byte	 00000072 _DATA	
+rowCounter . . . . . . . . . . .	DWord	 000000A8 _DATA	
+rowSize  . . . . . . . . . . . .	DWord	 000000B4 _DATA	
+space  . . . . . . . . . . . . .	Byte	 0000009E _DATA	
 strWord1 . . . . . . . . . . . .	Byte	 00000000 _DATA	
 strWord2 . . . . . . . . . . . .	Byte	 00000005 _DATA	
 strWord3 . . . . . . . . . . . .	Byte	 0000000A _DATA	
 strWord4 . . . . . . . . . . . .	Byte	 0000000F _DATA	
-sum  . . . . . . . . . . . . . .	DWord	 00000090 _DATA	
+sum  . . . . . . . . . . . . . .	DWord	 000000BC _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
-workingCol . . . . . . . . . . .	DWord	 00000078 _DATA	
-workingRow . . . . . . . . . . .	DWord	 00000074 _DATA	
+workingCol . . . . . . . . . . .	DWord	 000000A4 _DATA	
+workingRow . . . . . . . . . . .	DWord	 000000A0 _DATA	
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
 

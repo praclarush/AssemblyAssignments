@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/16/15 19:37:38
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/22/15 19:30:21
 main.asm						     Page 1 - 1
 
 
@@ -31,25 +31,55 @@ main.asm						     Page 1 - 1
 			      C .LIST
 			      C 
 
+
 				.386
 				.model flat, stdcall
-main.asm(11) : warning A4011:multiple .MODEL directives found : .MODEL ignored
+main.asm(12) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				.stack 4096
 
 				ExitProcess proto, dwExitCode:dword
+				GetValueFromMatrix proto matrix : PTR BYTE, cords : COORD, nRows : byte, nCols : byte
+
+
  = 00001388			BUFFER_SIZE = 5000
 
  00000000			.data
- 00000000 00			mapWidth BYTE ?
- 00000001 00			mapHeight BYTE ?
+ 00000000 14			mapWidth BYTE 20
+ 00000001 14			mapHeight BYTE 20
+ 00000002 00000000		consoleHandle DWORD ?
+ 00000006 00000000		cursorInfo CONSOLE_CURSOR_INFO <>
+	   00000000
 
-				;//THis will end up being a COOR Struct but for testing
- 00000002 00			playerX BYTE ?
- 00000003 00			playerY BYTE ?
+ 0000000E  00001388 [		buffer Byte BUFFER_SIZE DUP(?)
+	    00
+	   ]
+
+ 00001396 00			spaceChar byte ?
+
+				ALIGN WORD
+ 00001398 0000 0001		FuturePOS COORD <0,1>
+ 0000139C 0000 0001		CurrentPOS COORD <0,1>
+
  00000000			.code
 
-				;// Application Entry Point
+				;//------------------------------------------------------------------------------
  00000000			main proc
+				;//
+				;// Description: Main Application Entry Point
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+
+				;//Init
+				INVOKE GetStdHandle, STD_OUTPUT_HANDLE
+ 00000007  A3 00000002 R	mov consoleHandle, eax
+				INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo
+ 0000001C  C7 05 0000000A R	mov cursorInfo.bVisible, FALSE
+	   00000000
+				INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
+
+				;//End Init
 
 				;/*TODO(Nathan) Task List in order of operations for Game Start
 				; *1. Clear Screen
@@ -61,89 +91,209 @@ main.asm(11) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				; *7. Exit: If use selects Exit -> quit the application
 				; */
 
- 00000000			MainScreen:
- 00000000  E8 00000092		call MenuScreen
+				;//MainScreen:
+				;//call MenuScreen
+				;//
+				;//cmp ax, 1
+				;//jz StartGame
+				;//cmp ax, 2
+				;//jz ShowOptions
+				;//cmp ax, 3
+				;//jz ShowScore
+				;//cmp ax, 4
+				;//jz ExitProgram
+				;//
+				;//jmp MainScreen
+				;//
+				;//StartGame:
+ 00000036  E8 0000000C		call PrintMaze
+ 0000003B  E8 00000095		call MainGameLoop
+				;//
+				;//jmp MainScreen
+				;//
+				;//ShowScore:
+				;//call ScoreScreen
+				;//
+				;//jmp MainScreen
+				;//
+				;//ShowOptions:
+				;//call OptionsScreen
+				;//
+				;// jmp MainScreen
 
- 00000005  66| 83 F8 01		cmp ax, 1
- 00000009  74 14		jz StartGame
- 0000000B  66| 83 F8 02		cmp ax, 2
- 0000000F  74 21		jz ShowOptions
- 00000011  66| 83 F8 03		cmp ax, 3
- 00000015  74 14		jz ShowScore
- 00000017  66| 83 F8 04		cmp ax, 4
- 0000001B  74 1C		jz ExitProgram
+				;// invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
 
- 0000001D  EB E1		jmp MainScreen
-
- 0000001F			StartGame:
- 0000001F  E8 0000001C		call PrintMaze
- 00000024  E8 00000068		call MainGameLoop
-
- 00000029  EB D5		jmp MainScreen
-
- 0000002B			ShowScore:
- 0000002B  E8 00000085		call ScoreScreen
-
- 00000030  EB CE		jmp MainScreen
-
- 00000032			ShowOptions:
- 00000032  E8 00000098		call OptionsScreen
-
- 00000037  EB C7		jmp MainScreen
-
- 00000039			ExitProgram:
+				;//Clean up Before Exit
+				;// mov cursorInfo.bVisible, TRUE
+				;// INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+ 00000040			ExitProgram:
 				invoke ExitProcess, 0
- 00000040			main endp
+ 00000047			main endp
 
 				;//Procedures
- 00000040			PrintMaze PROC
- 00000004			.data
- 00000004  00001388 [		buffer Byte BUFFER_SIZE DUP(? )
-	    00
-	   ]
- 0000138C 6C 65 76 65 6C	fileName byte "level.dat", 0
-	   2E 64 61 74 00
- 00001396 00000000		fileHandle HANDLE ?
- 00000040			.code
- 00000040  E8 00000000 E	call Clrscr
- 00000045  BA 0000138C R	mov edx, OFFSET fileName
- 0000004A  E8 00000000 E	call OpenInputFile
- 0000004F  A3 00001396 R	mov fileHandle, eax
+				;//------------------------------------------------------------------------------
+ 00000047			PrintMaze PROC
+				;//
+				;// Description: Reads the Map from a file and prints it to the screen
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
- 00000054  BA 00000004 R	mov edx, OFFSET buffer
- 00000059  B9 00001388		mov ecx, BUFFER_SIZE
- 0000005E  E8 00000000 E	call ReadFromFile
+ 000013A0			.data
+ 000013A0 6C 65 76 65 6C	fileName byte "level.dat", 0
+	   2E 64 61 74 00
+ 000013AA 00000000		fileHandle HANDLE ?
+ 00000047			.code
+ 00000047  E8 00000000 E	call Clrscr
+ 0000004C  BA 000013A0 R	mov edx, OFFSET fileName
+ 00000051  E8 00000000 E	call OpenInputFile
+ 00000056  A3 000013AA R	mov fileHandle, eax
+
+ 0000005B  BA 0000000E R	mov edx, OFFSET buffer
+ 00000060  B9 00001388		mov ecx, BUFFER_SIZE
+ 00000065  E8 00000000 E	call ReadFromFile
 
 				;//clean registers
- 00000063  B9 00000000		mov ecx, 0
- 00000068  B8 00000000		mov eax, 0
- 0000006D  BB 00000000		mov ebx, 0
+ 0000006A  B9 00000000		mov ecx, 0
+ 0000006F  B8 00000000		mov eax, 0
+ 00000074  BB 00000000		mov ebx, 0
 
- 00000072  BA 00000004 R	mov edx, OFFSET buffer
- 00000077  B9 00001388		mov ecx, SIZEOF buffer
-
+ 00000079  BA 0000000E R	mov edx, OFFSET buffer
+ 0000007E  B9 00001388		mov ecx, SIZEOF buffer
 
 				;//Setup map size and player location
- 0000007C  E8 00000000 E	call WriteString
- 00000081  E8 00000000 E	call Crlf
+ 00000083  E8 00000000 E	call WriteString
+ 00000088  E8 00000000 E	call Crlf
 
- 00000086  A1 00001396 R	mov eax, fileHandle
- 0000008B  E8 00000000 E	call CloseFile
+ 0000008D  A1 000013AA R	mov eax, fileHandle
+ 00000092  E8 00000000 E	call CloseFile
 
- 00000090  C3			ret
- 00000091			PrintMaze ENDP
+ 00000097  C3			ret
+ 00000098			PrintMaze ENDP
 
- 00000091			MainGameLoop PROC;//Main Game loop
- 0000139A			.data
- 00000091			.code
- 00000091  E8 00000000 E	call WaitMsg
-				;//TODO(Nathan): Don't have a clue
- 00000096  C3			ret
- 00000097			MainGameLoop ENDP
+				;//------------------------------------------------------------------------------
+ 00000098			GetValueFromMatrix PROC USES eax ebx ecx edx, 
+				matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
+				    LOCAL baseAddress : BYTE
+				;//
+				;// Description: The Main Game Loop
+				;// Uses: 
+				;// Receives:
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
 
- 00000097			MenuScreen PROC;
- 0000139A			.data
- 0000139A 31 3A 20 50 6C	msgMenu byte "1: Play", 13, 10, "2: Options", 13, 10, "3: Scores", 13, 10, "4: Exit", 13, 10, 0
+				;//Row = y || Col = X
+
+				;//Address = Base_Address + coords.Y * nCols
+
+				;//address = Base_Address + (col_Index * rowSize + rowIndex) * 1
+
+				;//Element_Address = Base + Index * Element_Size
+
+				;//Element_Address = Base_Address + ((Index - Initial_Index) * Element_Size)
+
+ 000013AE			.data
+ 000013AE 00000000		bytesInRow dword ?
+ 000000A2			.code
+ 000000A2  33 C0		xor eax, eax
+ 000000A4  33 DB		xor ebx, ebx
+ 000000A6  33 C9		xor ecx, ecx
+
+ 000000A8  0F B6 45 14		movzx eax, nCols
+ 000000AC  03 C0		add eax, eax
+ 000000AE  A3 000013AE R	mov bytesInRow, eax
+
+ 000000B3  B9 00000000		mov ecx, 0;// (coord ptr coords).Y;//row
+ 000000B8  B8 00000000		mov eax, 0;// (coord ptr coords).X;//col
+ 000000BD  A1 000013AE R	mov eax, bytesInRow
+
+ 000000C2  F6 E1		mul cl
+ 000000C4  8D B4 90		lea esi, [buffer + eax + edx * 4]
+	   0000000E R
+
+ 000000CB  8B 06		mov eax, [esi]
+
+				ret
+ 000000D5			GetValueFromMatrix ENDP
+main.asm(186) : warning A6004:procedure argument or local not referenced : matrix
+main.asm(186) : warning A6004:procedure argument or local not referenced : coords
+main.asm(186) : warning A6004:procedure argument or local not referenced : nRows
+main.asm(186) : warning A6004:procedure argument or local not referenced : baseAddress
+
+				;//------------------------------------------------------------------------------
+ 000000D5			MainGameLoop PROC
+				;//
+				;// Description: The Main Game Loop
+				;// Uses: 
+				;// Receives:
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+ 000013B2			.data
+
+ 000000D5			.code
+ 000000D5			GameLoop:
+
+ 000000D5  E8 000000B9		call UpdateGameInformation
+ 000000DA  E8 00000003		call GetPlayerInput
+
+
+ 000000DF  EB F4		 jmp GameLoop
+
+				;//TODO(nathan): 
+				;// Update Clock
+				;// get user input
+				;// move player
+				;// check if at exit
+				;// update score
+
+ 000000E1  C3			ret
+ 000000E2			MainGameLoop ENDP
+
+
+ 000000E2			GetPlayerInput PROC USES eax
+				LOCAL keyPress : BYTE
+ 000013B2			.data
+
+ 000000E9			.code
+ 000000E9  C6 45 FF 00		mov keyPress, 0
+
+ 000000ED  33 C0		xor eax, eax
+ 000000EF  B8 0000000A		mov eax, 10
+ 000000F4  E8 00000000 E	call Delay
+ 000000F9  E8 00000000 E	call ReadKey
+
+ 000000FE  88 45 FF		mov keyPress, al
+
+				.IF(keyPress == "s")
+ 00000107  66| 83 05		add FuturePOS.Y, 1
+	   0000139A R 01
+				.ELSEIF(keyPress == "w")
+ 00000117  66| 83 2D		sub FuturePOS.Y, 1
+	   0000139A R 01
+				.ELSEIF(keyPress == "d")
+ 00000127  66| 83 05		add FuturePOS.X, 1
+	   00001398 R 01
+				.ELSEIF(keyPress == "a")
+ 00000137  66| 83 2D		sub FuturePOS.X, 1
+	   00001398 R 01
+				.ENDIF
+
+
+
+
+				ret
+ 00000142			GetPlayerInput ENDP
+
+				;//------------------------------------------------------------------------------
+ 00000142			MenuScreen PROC;
+				;//
+				;// Description: Prints the Main Menu and Reads user input
+				;// Uses: 
+				;// Receives: Nothing
+				;// Returns: AX
+				;//------------------------------------------------------------------------------
+ 000013B2			.data
+ 000013B2 31 3A 20 50 6C	msgMenu byte "1: Play", 13, 10, "2: Options", 13, 10, "3: Scores", 13, 10, "4: Exit", 13, 10, 0
 	   61 79 0D 0A 32
 	   3A 20 4F 70 74
 	   69 6F 6E 73 0D
@@ -153,36 +303,42 @@ main.asm(11) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 	   45 78 69 74 0D
 	   0A 00
 
- 00000097			.code
- 00000097  33 C0		xor eax, eax
- 00000099  33 D2		xor edx, edx
+ 00000142			.code
+ 00000142  33 C0		xor eax, eax
+ 00000144  33 D2		xor edx, edx
 
- 0000009B  E8 00000000 E	call Clrscr
+ 00000146  E8 00000000 E	call Clrscr
 
- 000000A0  BA 0000139A R	mov edx, OFFSET msgMenu
- 000000A5  E8 00000000 E	call WriteString
- 000000AA  E8 00000000 E	call Crlf
- 000000AF  E8 00000000 E	call readInt
+ 0000014B  BA 000013B2 R	mov edx, OFFSET msgMenu
+ 00000150  E8 00000000 E	call WriteString
+ 00000155  E8 00000000 E	call Crlf
+ 0000015A  E8 00000000 E	call readInt
 
- 000000B4  C3			ret
- 000000B5			MenuScreen ENDP
+ 0000015F  C3			ret
+ 00000160			MenuScreen ENDP
 
- 000000B5			ScoreScreen PROC
- 000013C4			.data
- 000013C4 53 63 6F 72 65	msgScoreTitle byte "Scores: ", 13, 10, 0
+				;//------------------------------------------------------------------------------
+ 00000160			ScoreScreen PROC
+				;//
+				;// Description: Reads and Displays the Scores from a File
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+ 000013DC			.data
+ 000013DC 53 63 6F 72 65	msgScoreTitle byte "Scores: ", 13, 10, 0
 	   73 3A 20 0D 0A
 	   00
 
- 000000B5			.code
- 000000B5  33 C0		xor eax, eax
- 000000B7  33 D2		xor edx, edx
+ 00000160			.code
+ 00000160  33 C0		xor eax, eax
+ 00000162  33 D2		xor edx, edx
 
- 000000B9  E8 00000000 E	call Clrscr
+ 00000164  E8 00000000 E	call Clrscr
 
- 000000BE  BA 000013C4 R	mov edx, OFFSET msgScoreTitle
- 000000C3  E8 00000000 E	call WriteString
+ 00000169  BA 000013DC R	mov edx, OFFSET msgScoreTitle
+ 0000016E  E8 00000000 E	call WriteString
 
- 000000C8  E8 00000000 E	call WaitMsg
+ 00000173  E8 00000000 E	call WaitMsg
 				;/*TODO(Nathan) Task List in order of operations for Score Screen
 				 ; *1. Clear Screen
 				 ; *2. Read Score File
@@ -190,53 +346,104 @@ main.asm(11) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				 ; *4. Print Options for Return to Main Screen, Clear Score List
 				 ; *Notes: Read Player Input here?.
 				 ; */
- 000000CD  C3			ret
- 000000CE			ScoreScreen ENDP
+ 00000178  C3			ret
+ 00000179			ScoreScreen ENDP
 
- 000000CE			SaveScore PROC;
- 000013CF			.data
- 000000CE			.code
+				;//------------------------------------------------------------------------------
+ 00000179			SaveScore PROC;
+				;//
+				;// Description: Saves the Score and Completion Time to a file 
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+ 000013E7			.data
+ 00000179			.code
 				;/*TODO(Nathan) Task List in order of operations for SaveScore
 				 ; *1. Clear Screen
 				 ; *2. Save Score to File
 				 ; */
- 000000CE  C3			ret
- 000000CF			SaveScore ENDP
+ 00000179  C3			ret
+ 0000017A			SaveScore ENDP
 
- 000000CF			OptionsScreen PROC;
- 000013CF			.data
- 000013CF 4F 70 74 69 6F	msgOptions byte "Options", 0
+				;//------------------------------------------------------------------------------
+ 0000017A			OptionsScreen PROC;
+				;//
+				;// Description: Displays the Options and Reads Input from the User 
+				;//              and Updates global flags
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+ 000013E7			.data
+ 000013E7 4F 70 74 69 6F	msgOptions byte "Options", 0
 	   6E 73 00
 
- 000000CF			.code
- 000000CF  33 C0		xor eax, eax
- 000000D1  33 D2		xor edx, edx
+ 0000017A			.code
+ 0000017A  33 C0		xor eax, eax
+ 0000017C  33 D2		xor edx, edx
 
- 000000D3  E8 00000000 E	call Clrscr
+ 0000017E  E8 00000000 E	call Clrscr
 
- 000000D8  BA 000013CF R	mov edx, OFFSET msgOptions
- 000000DD  E8 00000000 E	call WriteString
+ 00000183  BA 000013E7 R	mov edx, OFFSET msgOptions
+ 00000188  E8 00000000 E	call WriteString
 
- 000000E2  E8 00000000 E	call WaitMsg
+ 0000018D  E8 00000000 E	call WaitMsg
 
 				;/*TODO(Nathan) Task List in order of operations for Options
 				 ; *1. Clear Screen
 				 ; *2. Enable Timer
 				 ; */
- 000000E7  C3			ret
- 000000E8			OptionsScreen ENDP
+ 00000192  C3			ret
+ 00000193			OptionsScreen ENDP
 
- 000000E8			UpdateGameInformation PROC
- 000013D7			.data
- 000000E8			.code
+				;//------------------------------------------------------------------------------
+ 00000193			UpdateGameInformation PROC
+				;//
+				;// Description: Don't Know May Not Be Used;
+				;// Receives: Nothing
+				;// Returns: Nothing
+				;//------------------------------------------------------------------------------
+ 000013EF			.data
+ 000013EF 20 00			playerChar byte " ", 0
+ 000013F1 01			len byte 1
+ 00000193			.code
+
+ 00000193  33 C0		xor eax, eax
+
+				;//Draw Player
+				INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
+ 000001A6  B0 20		mov al, " "
+ 000001A8  E8 00000000 E	call WriteChar
+
+ 000001AD  66| 33 C0		xor ax, ax
+ 000001B0  66| A1		mov ax, FuturePOS.X
+	   00001398 R
+ 000001B6  66| A3		mov CurrentPOS.X, ax
+	   0000139C R
+
+ 000001BC  66| 33 C0		xor ax, ax
+ 000001BF  66| A1		mov ax, FuturePOS.Y
+	   0000139A R
+ 000001C5  66| A3		mov CurrentPOS.Y, ax
+	   0000139E R
+
+				INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
+ 000001DC  B0 DB		mov al, 0DBh;// offset playerChar
+ 000001DE  E8 00000000 E	call WriteChar
+
+				;// call ReadConsoleOutputCharacter, consoleHandle, addr spaceChar, len * 2, addr FuturePOS, len
+
+
+
+
+
 				;/*TODO(Nathan) Task List in order of operations for Update Game Information
 				 ; *1. Draw Time, Score, Player and Items onto Maze
 				 ; */
- 000000E8  C3			ret
- 000000E9			UpdateGameInformation ENDP
+ 000001E3  C3			ret
+ 000001E4			UpdateGameInformation ENDP
 
 				end main
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/16/15 19:37:38
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    09/22/15 19:30:21
 main.asm						     Symbols 2 - 1
 
 
@@ -348,8 +555,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000013D7 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000000E9 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000013F2 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000001E4 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -384,11 +591,19 @@ GetLocalTime . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetMaxXY . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetMseconds  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetNumberOfConsoleInputEvents  .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+GetPlayerInput . . . . . . . . .	P Near	 000000E2 _TEXT	Length= 00000060 Public STDCALL
+  keyPress . . . . . . . . . . .	Byte	 bp - 00000001
 GetProcessHeap . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTextColor . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTickCount . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+GetValueFromMatrix . . . . . . .	P Near	 00000098 _TEXT	Length= 0000003D Public STDCALL
+  matrix . . . . . . . . . . . .	DWord	 bp + 00000008
+  coords . . . . . . . . . . . .	DWord	 bp + 0000000C
+  nRows  . . . . . . . . . . . .	Byte	 bp + 00000010
+  nCols  . . . . . . . . . . . .	Byte	 bp + 00000014
+  baseAddress  . . . . . . . . .	Byte	 bp - 00000001
 Gotoxy . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapAlloc  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -397,17 +612,18 @@ HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-MainGameLoop . . . . . . . . . .	P Near	 00000091 _TEXT	Length= 00000006 Public STDCALL
-MenuScreen . . . . . . . . . . .	P Near	 00000097 _TEXT	Length= 0000001E Public STDCALL
+MainGameLoop . . . . . . . . . .	P Near	 000000D5 _TEXT	Length= 0000000D Public STDCALL
+  GameLoop . . . . . . . . . . .	L Near	 000000D5 _TEXT	
+MenuScreen . . . . . . . . . . .	P Near	 00000142 _TEXT	Length= 0000001E Public STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBoxAsk  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBox . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 OpenInputFile  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-OptionsScreen  . . . . . . . . .	P Near	 000000CF _TEXT	Length= 00000019 Public STDCALL
+OptionsScreen  . . . . . . . . .	P Near	 0000017A _TEXT	Length= 00000019 Public STDCALL
 ParseDecimal32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 PeekConsoleInputA  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-PrintMaze  . . . . . . . . . . .	P Near	 00000040 _TEXT	Length= 00000051 Public STDCALL
+PrintMaze  . . . . . . . . . . .	P Near	 00000047 _TEXT	Length= 00000051 Public STDCALL
 Random32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 RandomRange  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Randomize  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -423,8 +639,8 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-SaveScore  . . . . . . . . . . .	P Near	 000000CE _TEXT	Length= 00000001 Public STDCALL
-ScoreScreen  . . . . . . . . . .	P Near	 000000B5 _TEXT	Length= 00000019 Public STDCALL
+SaveScore  . . . . . . . . . . .	P Near	 00000179 _TEXT	Length= 00000001 Public STDCALL
+ScoreScreen  . . . . . . . . . .	P Near	 00000160 _TEXT	Length= 00000019 Public STDCALL
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -444,7 +660,7 @@ Str_length . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 Str_trim . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_ucase  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SystemTimeToFileTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-UpdateGameInformation  . . . . .	P Near	 000000E8 _TEXT	Length= 00000001 Public STDCALL
+UpdateGameInformation  . . . . .	P Near	 00000193 _TEXT	Length= 00000051 Public STDCALL
 WaitMsg  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBinB  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBin . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -463,12 +679,8 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000040 Public STDCALL
-  MainScreen . . . . . . . . . .	L Near	 00000000 _TEXT	
-  StartGame  . . . . . . . . . .	L Near	 0000001F _TEXT	
-  ShowScore  . . . . . . . . . .	L Near	 0000002B _TEXT	
-  ShowOptions  . . . . . . . . .	L Near	 00000032 _TEXT	
-  ExitProgram  . . . . . . . . .	L Near	 00000039 _TEXT	
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000047 Public STDCALL
+  ExitProgram  . . . . . . . . .	L Near	 00000040 _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -494,6 +706,7 @@ CREATE_ALWAYS  . . . . . . . . .	Number	 00000002h
 CREATE_NEW . . . . . . . . . . .	Number	 00000001h   
 CTRL_MASK  . . . . . . . . . . .	Number	 0000000Ch   
 CreateFile . . . . . . . . . . .	Text   	 CreateFileA
+CurrentPOS . . . . . . . . . . .	COORD	 0000139C _DATA	
 DO_NOT_SHARE . . . . . . . . . .	Number	 00000000h   
 ENABLE_ECHO_INPUT  . . . . . . .	Number	 00000004h   
 ENABLE_LINE_INPUT  . . . . . . .	Number	 00000002h   
@@ -532,6 +745,7 @@ FOCUS_EVENT  . . . . . . . . . .	Number	 00000010h
 FORMAT_MESSAGE_ALLOCATE_BUFFER .	Number	 00000100h   
 FORMAT_MESSAGE_FROM_SYSTEM . . .	Number	 00001000h   
 FormatMessage  . . . . . . . . .	Text   	 FormatMessageA
+FuturePOS  . . . . . . . . . . .	COORD	 00001398 _DATA	
 GENERIC_ALL  . . . . . . . . . .	Number	 10000000h   
 GENERIC_EXECUTE  . . . . . . . .	Number	 20000000h   
 GENERIC_READ . . . . . . . . . .	Number	 -80000000h   
@@ -691,13 +905,17 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
-buffer . . . . . . . . . . . . .	Byte	 00000004 _DATA	
+buffer . . . . . . . . . . . . .	Byte	 0000000E _DATA	
+bytesInRow . . . . . . . . . . .	DWord	 000013AE _DATA	
+consoleHandle  . . . . . . . . .	DWord	 00000002 _DATA	
+cursorInfo . . . . . . . . . . .	CONSOLE_CURSOR_INFO  00000006 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
-fileHandle . . . . . . . . . . .	DWord	 00001396 _DATA	
-fileName . . . . . . . . . . . .	Byte	 0000138C _DATA	
+fileHandle . . . . . . . . . . .	DWord	 000013AA _DATA	
+fileName . . . . . . . . . . . .	Byte	 000013A0 _DATA	
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
+len  . . . . . . . . . . . . . .	Byte	 000013F1 _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
 lightCyan  . . . . . . . . . . .	Number	 0000000Bh   
 lightGray  . . . . . . . . . . .	Number	 00000007h   
@@ -707,15 +925,15 @@ lightRed . . . . . . . . . . . .	Number	 0000000Ch
 magenta  . . . . . . . . . . . .	Number	 00000005h   
 mapHeight  . . . . . . . . . . .	Byte	 00000001 _DATA	
 mapWidth . . . . . . . . . . . .	Byte	 00000000 _DATA	
-msgMenu  . . . . . . . . . . . .	Byte	 0000139A _DATA	
-msgOptions . . . . . . . . . . .	Byte	 000013CF _DATA	
-msgScoreTitle  . . . . . . . . .	Byte	 000013C4 _DATA	
-playerX  . . . . . . . . . . . .	Byte	 00000002 _DATA	
-playerY  . . . . . . . . . . . .	Byte	 00000003 _DATA	
+msgMenu  . . . . . . . . . . . .	Byte	 000013B2 _DATA	
+msgOptions . . . . . . . . . . .	Byte	 000013E7 _DATA	
+msgScoreTitle  . . . . . . . . .	Byte	 000013DC _DATA	
+playerChar . . . . . . . . . . .	Byte	 000013EF _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
+spaceChar  . . . . . . . . . . .	Byte	 00001396 _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
 
-	   1 Warnings
+	   5 Warnings
 	   0 Errors

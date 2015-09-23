@@ -7,20 +7,31 @@
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
+
 .386
 .model flat, stdcall
 .stack 4096
 
 ExitProcess proto, dwExitCode:dword
+GetValueFromMatrix proto matrix : PTR BYTE, cords : COORD, nRows : byte, nCols : byte
+
+
 BUFFER_SIZE = 5000
 
 .data
-mapWidth BYTE ?
-mapHeight BYTE ?
+mapWidth BYTE 20
+mapHeight BYTE 20
+consoleHandle DWORD ?
+cursorInfo CONSOLE_CURSOR_INFO <>
 
-;//THis will end up being a COOR Struct but for testing
-playerX BYTE ?
-playerY BYTE ?
+buffer Byte BUFFER_SIZE DUP(?)
+
+spaceChar byte ?
+
+ALIGN WORD
+FuturePOS COORD <0,1>
+CurrentPOS COORD <0,1>
+
 .code
 
 ;//------------------------------------------------------------------------------
@@ -30,6 +41,16 @@ main proc
 ;// Receives: Nothing
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
+
+;//Init
+INVOKE GetStdHandle, STD_OUTPUT_HANDLE
+mov consoleHandle, eax
+INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo
+mov cursorInfo.bVisible, FALSE
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
+
+;//End Init
 
 ;/*TODO(Nathan) Task List in order of operations for Game Start
 ; *1. Clear Screen
@@ -41,36 +62,41 @@ main proc
 ; *7. Exit: If use selects Exit -> quit the application
 ; */
 
-MainScreen:
-call MenuScreen
-
-cmp ax, 1
-jz StartGame
-cmp ax, 2
-jz ShowOptions
-cmp ax, 3
-jz ShowScore
-cmp ax, 4
-jz ExitProgram
-
-jmp MainScreen
-
-StartGame:
+;//MainScreen:
+;//call MenuScreen
+;//
+;//cmp ax, 1
+;//jz StartGame
+;//cmp ax, 2
+;//jz ShowOptions
+;//cmp ax, 3
+;//jz ShowScore
+;//cmp ax, 4
+;//jz ExitProgram
+;//
+;//jmp MainScreen
+;//
+;//StartGame:
 call PrintMaze
 call MainGameLoop
+;//
+;//jmp MainScreen
+;//
+;//ShowScore:
+;//call ScoreScreen
+;//
+;//jmp MainScreen
+;//
+;//ShowOptions:
+;//call OptionsScreen
+;//
+;// jmp MainScreen
 
-jmp MainScreen
+;// invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
 
-ShowScore:
-call ScoreScreen
-
-jmp MainScreen
-
-ShowOptions:
-call OptionsScreen
-
-jmp MainScreen
-
+;//Clean up Before Exit
+;// mov cursorInfo.bVisible, TRUE
+;// INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 ExitProgram:
 invoke ExitProcess, 0
 main endp
@@ -85,7 +111,6 @@ PrintMaze PROC
 ;//------------------------------------------------------------------------------
 
 .data
-buffer Byte BUFFER_SIZE DUP(? )
 fileName byte "level.dat", 0
 fileHandle HANDLE ?
 .code
@@ -106,7 +131,6 @@ mov ebx, 0
 mov edx, OFFSET buffer
 mov ecx, SIZEOF buffer
 
-
 ;//Setup map size and player location
 call WriteString
 call Crlf
@@ -118,6 +142,50 @@ ret
 PrintMaze ENDP
 
 ;//------------------------------------------------------------------------------
+GetValueFromMatrix PROC USES eax ebx ecx edx, 
+matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
+    LOCAL baseAddress : BYTE
+;//
+;// Description: The Main Game Loop
+;// Uses: 
+;// Receives:
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
+
+;//Row = y || Col = X
+
+;//Address = Base_Address + coords.Y * nCols
+
+;//address = Base_Address + (col_Index * rowSize + rowIndex) * 1
+
+;//Element_Address = Base + Index * Element_Size
+
+;//Element_Address = Base_Address + ((Index - Initial_Index) * Element_Size)
+
+.data
+bytesInRow dword ?
+.code
+xor eax, eax
+xor ebx, ebx
+xor ecx, ecx
+
+movzx eax, nCols
+add eax, eax
+mov bytesInRow, eax
+
+mov ecx, 0;// (coord ptr coords).Y;//row
+mov eax, 0;// (coord ptr coords).X;//col
+mov eax, bytesInRow
+
+mul cl
+lea esi, [buffer + eax + edx * 4]
+
+mov eax, [esi]
+
+ret
+GetValueFromMatrix ENDP
+
+;//------------------------------------------------------------------------------
 MainGameLoop PROC
 ;//
 ;// Description: The Main Game Loop
@@ -126,8 +194,15 @@ MainGameLoop PROC
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 .data
+
 .code
-call WaitMsg
+GameLoop:
+
+call UpdateGameInformation
+call GetPlayerInput
+
+
+ jmp GameLoop
 
 ;//TODO(nathan): 
 ;// Update Clock
@@ -138,6 +213,37 @@ call WaitMsg
 
 ret
 MainGameLoop ENDP
+
+
+GetPlayerInput PROC USES eax
+LOCAL keyPress : BYTE
+.data
+
+.code
+mov keyPress, 0
+
+xor eax, eax
+mov eax, 10
+call Delay
+call ReadKey
+
+mov keyPress, al
+
+.IF(keyPress == "s")
+add FuturePOS.Y, 1
+.ELSEIF(keyPress == "w")
+sub FuturePOS.Y, 1
+.ELSEIF(keyPress == "d")
+add FuturePOS.X, 1
+.ELSEIF(keyPress == "a")
+sub FuturePOS.X, 1
+.ENDIF
+
+
+
+
+ret
+GetPlayerInput ENDP
 
 ;//------------------------------------------------------------------------------
 MenuScreen PROC;
@@ -247,7 +353,35 @@ UpdateGameInformation PROC
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 .data
+playerChar byte " ", 0
+len byte 1
 .code
+
+xor eax, eax
+
+;//Draw Player
+INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
+mov al, " "
+call WriteChar
+
+xor ax, ax
+mov ax, FuturePOS.X
+mov CurrentPOS.X, ax
+
+xor ax, ax
+mov ax, FuturePOS.Y
+mov CurrentPOS.Y, ax
+
+INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
+mov al, 0DBh;// offset playerChar
+call WriteChar
+
+;// call ReadConsoleOutputCharacter, consoleHandle, addr spaceChar, len * 2, addr FuturePOS, len
+
+
+
+
+
 ;/*TODO(Nathan) Task List in order of operations for Update Game Information
  ; *1. Draw Time, Score, Player and Items onto Maze
  ; */
