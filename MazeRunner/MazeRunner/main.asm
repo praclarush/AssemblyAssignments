@@ -19,7 +19,7 @@ GetValueFromMatrix proto matrix : PTR BYTE, cords : COORD, nRows : byte, nCols :
 BUFFER_SIZE = 5000
 
 .data
-mapWidth BYTE 20
+mapWidth BYTE 23
 mapHeight BYTE 20
 consoleHandle DWORD ?
 cursorInfo CONSOLE_CURSOR_INFO <>
@@ -30,7 +30,7 @@ spaceChar byte ?
 
 ALIGN WORD
 FuturePOS COORD <0,1>
-CurrentPOS COORD <0,1>
+CurrentPOS COORD <0,0>
 
 .code
 
@@ -48,19 +48,7 @@ mov consoleHandle, eax
 INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo
 mov cursorInfo.bVisible, FALSE
 INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
-
-
 ;//End Init
-
-;/*TODO(Nathan) Task List in order of operations for Game Start
-; *1. Clear Screen
-; *2. Draw Main Menu
-; *3. User Selections - Start Game, Options, Score List, Exit
-; *4. Options Screen: If user selects Options -> Draw the Options
-; *5. Score List: If user selects Score List -> Draw the Score List
-; *6. Start Game: if user selects Start Game -> start the MainGameLoop;
-; *7. Exit: If use selects Exit -> quit the application
-; */
 
 ;//MainScreen:
 ;//call MenuScreen
@@ -78,7 +66,7 @@ INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 ;//
 ;//StartGame:
 call PrintMaze
-call MainGameLoop
+; call MainGameLoop
 ;//
 ;//jmp MainScreen
 ;//
@@ -92,7 +80,7 @@ call MainGameLoop
 ;//
 ;// jmp MainScreen
 
-;// invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
+ invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
 
 ;//Clean up Before Exit
 ;// mov cursorInfo.bVisible, TRUE
@@ -151,36 +139,30 @@ matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
 ;// Receives:
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
-
-;//Row = y || Col = X
-
-;//Address = Base_Address + coords.Y * nCols
-
-;//address = Base_Address + (col_Index * rowSize + rowIndex) * 1
-
-;//Element_Address = Base + Index * Element_Size
-
-;//Element_Address = Base_Address + ((Index - Initial_Index) * Element_Size)
-
 .data
 bytesInRow dword ?
 .code
-xor eax, eax
+xor eax, eax;//y || row
+xor ecx, ecx;//x || cols
 xor ebx, ebx
-xor ecx, ecx
 
-movzx eax, nCols
-add eax, eax
-mov bytesInRow, eax
+movzx eax, (coord ptr coords).Y;//row
 
-mov ecx, 0;// (coord ptr coords).Y;//row
-mov eax, 0;// (coord ptr coords).X;//col
-mov eax, bytesInRow
+mul nCols
 
-mul cl
-lea esi, [buffer + eax + edx * 4]
 
-mov eax, [esi]
+movzx ecx,  (coord ptr coords).X ;//col
+
+;//calc row offset
+;// row = cols * y
+
+;// so index = (cols * y) + x
+
+add eax, ecx
+
+movzx esi, [buffer + eax]
+
+
 
 ret
 GetValueFromMatrix ENDP
