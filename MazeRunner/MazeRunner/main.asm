@@ -1,21 +1,21 @@
 ;/* ---------------------------------------------------------------------------
-;**
 ;** File: main.asm
-;** Description: Assembly Template
+;** Description: Maze Runner Game for Final Project in CSPG360
+;**              Computer Organization and Assembly Language
 ;** Author: Nathan Bremmer
 ;** -------------------------------------------------------------------------*/
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
-
 .386
 .model flat, stdcall
 .stack 4096
 
+;//Prototypes
 ExitProcess proto, dwExitCode:dword
 GetValueFromMatrix proto matrix : PTR BYTE, cords : COORD, nRows : byte, nCols : byte
 
-
+;//Constants
 BUFFER_SIZE = 5000
 
 .data
@@ -65,6 +65,7 @@ INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 ;//jmp MainScreen
 ;//
 ;//StartGame:
+;// TODO(Nathan): Need to default COORS for current and future player POS for each new game
 call PrintMaze
 ; call MainGameLoop
 ;//
@@ -82,6 +83,9 @@ call PrintMaze
 
  invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
 
+;//GameOver:
+;//jmp ExitProgram
+
 ;//Clean up Before Exit
 ;// mov cursorInfo.bVisible, TRUE
 ;// INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
@@ -91,11 +95,12 @@ main endp
 
 ;//Procedures
 ;//------------------------------------------------------------------------------
-PrintMaze PROC
+PrintMaze PROC USES edx ecx eax ebx
 ;//
-;// Description: Reads the Map from a file and prints it to the screen
+;// Description: Reads the Map from a file into a buffer array and prints it to the screen
+;// Uses: edx, ecx, eax, and ebx
 ;// Receives: Nothing
-;// Returns: Nothing
+;// Returns: array stored in buffer
 ;//------------------------------------------------------------------------------
 
 .data
@@ -128,6 +133,19 @@ call CloseFile
 
 ret
 PrintMaze ENDP
+
+;//------------------------------------------------------------------------------
+GenerateScorePickups PROC
+;//
+;// Description: will randomly place score pickups on the map
+;// Uses: Nothing
+;// Receives: Nothing
+;// Returns: Nothing
+;// Remarks: this might end up as a macro for easer calling.
+;//------------------------------------------------------------------------------
+
+ret
+GenerateScorePickups ENDP
 
 ;//------------------------------------------------------------------------------
 GetValueFromMatrix PROC USES eax ebx ecx edx, 
@@ -168,12 +186,12 @@ ret
 GetValueFromMatrix ENDP
 
 ;//------------------------------------------------------------------------------
-MainGameLoop PROC
+MainGameLoop PROC USES eax
 ;//
 ;// Description: The Main Game Loop
-;// Uses: 
-;// Receives:
-;// Returns: Nothing
+;// Uses: eax
+;// Receives: Nothing
+;// Returns: value stored in gameOver variable as a 1 or 0
 ;//------------------------------------------------------------------------------
 .data
 
@@ -228,12 +246,12 @@ ret
 GetPlayerInput ENDP
 
 ;//------------------------------------------------------------------------------
-MenuScreen PROC;
+MenuScreen PROC USES eax edx
 ;//
 ;// Description: Prints the Main Menu and Reads user input
-;// Uses: 
+;// Uses: eax and edx
 ;// Receives: Nothing
-;// Returns: AX
+;// Returns: player menu choice stored in AX
 ;//------------------------------------------------------------------------------
 .data
 msgMenu byte "1: Play", 13, 10, "2: Options", 13, 10, "3: Scores", 13, 10, "4: Exit", 13, 10, 0
@@ -253,9 +271,10 @@ ret
 MenuScreen ENDP
 
 ;//------------------------------------------------------------------------------
-ScoreScreen PROC
+ScoreScreen PROC USES eax edx
 ;//
 ;// Description: Reads and Displays the Scores from a File
+;// Uses: eax and edx
 ;// Receives: Nothing
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
@@ -286,7 +305,8 @@ ScoreScreen ENDP
 SaveScore PROC;
 ;//
 ;// Description: Saves the Score and Completion Time to a file 
-;// Receives: Nothing
+;// Uses:
+;// Receives: name, score and, time remaining
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 .data
@@ -299,12 +319,13 @@ ret
 SaveScore ENDP
 
 ;//------------------------------------------------------------------------------
-OptionsScreen PROC;
+OptionsScreen PROC USES eax edx;
 ;//
 ;// Description: Displays the Options and Reads Input from the User 
 ;//              and Updates global flags
-;// Receives: Nothing
+;// Uses: eax and edx
 ;// Returns: Nothing
+;// Remarks: this option is on the cutting block; will be first to go if out of time
 ;//------------------------------------------------------------------------------
 .data
 msgOptions byte "Options", 0
@@ -328,11 +349,11 @@ ret
 OptionsScreen ENDP
 
 ;//------------------------------------------------------------------------------
-UpdateGameInformation PROC
-;//
+UpdateGameInformation PROC uses al
+;// Uses: al
 ;// Description: Don't Know May Not Be Used;
-;// Receives: Nothing
-;// Returns: Nothing
+;// Receives: the player current and future locations in global variables
+;// Returns: nothing
 ;//------------------------------------------------------------------------------
 .data
 playerChar byte " ", 0
