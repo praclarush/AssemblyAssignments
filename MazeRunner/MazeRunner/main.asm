@@ -19,20 +19,45 @@ GetValueFromMatrix proto matrix : PTR BYTE, cords : COORD, nRows : byte, nCols :
 BUFFER_SIZE = 5000
 
 .data
+
+;//Map data
 mapWidth BYTE 23
 mapHeight BYTE 20
 consoleHandle DWORD ?
 cursorInfo CONSOLE_CURSOR_INFO <>
+buffer Byte BUFFER_SIZE DUP(? )
 
-buffer Byte BUFFER_SIZE DUP(?)
-
-spaceChar byte ?
-
+;//Player data
 ALIGN WORD
-FuturePOS COORD <0,1>
-CurrentPOS COORD <0,0>
+FuturePOS COORD <0,1> ;//x, y
+ALIGN WORD
+CurrentPOS COORD <0,1>
+ALIGN WORD
+ScorePOS COORD <>
 
+
+;//game info
+score dword 0
 .code
+
+;//------------------------------------------------------------------------------
+mCopyCOORD MACRO destCOORD:req, sourceCOORD:req
+;//
+;// Description: Copies the values of one COORD struct to another
+;// Avoid Using ax
+;// Receives: a destination coord and a source coord struct; 
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
+
+xor ax, ax
+mov ax, (coord ptr sourceCOORD).X
+mov(coord ptr destCOORD).X, ax
+
+xor ax, ax
+mov ax, (coord ptr sourceCOORD).Y
+mov(coord ptr destCOORD).Y, ax
+
+ENDM
 
 ;//------------------------------------------------------------------------------
 main proc
@@ -48,6 +73,14 @@ mov consoleHandle, eax
 INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo
 mov cursorInfo.bVisible, FALSE
 INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
+mov score, 0
+
+;//mov ScorePOS.Y, 10
+;//xor ax, ax
+;//
+;//mov ScorePOS.x, mapWidth
+
 ;//End Init
 
 ;//MainScreen:
@@ -66,8 +99,8 @@ INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 ;//
 ;//StartGame:
 call PrintMaze
-; call MainGameLoop
-;//
+call UpdatePlayerLocation
+call MainGameLoop
 ;//jmp MainScreen
 ;//
 ;//ShowScore:
@@ -80,11 +113,10 @@ call PrintMaze
 ;//
 ;// jmp MainScreen
 
- invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
-
 ;//Clean up Before Exit
-;// mov cursorInfo.bVisible, TRUE
-;// INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+mov cursorInfo.bVisible, TRUE
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
 ExitProgram:
 invoke ExitProcess, 0
 main endp
@@ -130,14 +162,16 @@ ret
 PrintMaze ENDP
 
 ;//------------------------------------------------------------------------------
-GetValueFromMatrix PROC USES eax ebx ecx edx, 
-matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
-    LOCAL baseAddress : BYTE
+GetValueFromMatrix PROC USES eax ecx edx, 
+matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte    
 ;//
 ;// Description: The Main Game Loop
 ;// Uses: 
 ;// Receives:
-;// Returns: Nothing
+;// Returns: the value in the array at the location specified in matrix using ebx
+;// Notes: calc row offset
+;//        row = cols * y
+;//        so index = (cols * y) + x
 ;//------------------------------------------------------------------------------
 .data
 bytesInRow dword ?
@@ -146,24 +180,12 @@ xor eax, eax;//y || row
 xor ecx, ecx;//x || cols
 xor ebx, ebx
 
+movzx ecx, (coord ptr coords).X;//col
 movzx eax, (coord ptr coords).Y;//row
+mul nCols;//multiply eax by nCols
 
-mul nCols
-
-
-movzx ecx,  (coord ptr coords).X ;//col
-
-;//calc row offset
-;// row = cols * y
-
-;// so index = (cols * y) + x
-
-add eax, ecx
-
-movzx esi, [buffer + eax]
-
-
-
+add ecx, eax
+movzx ebx, [buffer + 1 * ecx]
 ret
 GetValueFromMatrix ENDP
 
@@ -180,9 +202,7 @@ MainGameLoop PROC
 .code
 GameLoop:
 
-call UpdateGameInformation
 call GetPlayerInput
-
 
  jmp GameLoop
 
@@ -212,17 +232,35 @@ call ReadKey
 mov keyPress, al
 
 .IF(keyPress == "s")
-add FuturePOS.Y, 1
+inc FuturePOS.Y
 .ELSEIF(keyPress == "w")
-sub FuturePOS.Y, 1
+dec FuturePOS.Y
 .ELSEIF(keyPress == "d")
-add FuturePOS.X, 1
+inc FuturePOS.X
 .ELSEIF(keyPress == "a")
-sub FuturePOS.X, 1
+dec FuturePOS.X
 .ENDIF
 
+xor ebx, ebx
+invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
+;// check if move is valid
 
+.IF(ebx != 0 && ebx != 13 && ebx != 12 && ebx != 43 && ebx != 45 && ebx != 124 && keyPress != 1)
 
+call UpdatePlayerLocation
+
+.IF(ebx == 126)
+;//Game Over with Exit
+.ELSEIF(ebx == 42);// 157)
+add score, 15
+.ELSEIF(ebx == 234)
+add score, 10
+.ENDIF
+
+.ElSE
+mCopyCOORD FuturePOS, CurrentPOS
+
+.ENDIF
 
 ret
 GetPlayerInput ENDP
@@ -328,17 +366,28 @@ ret
 OptionsScreen ENDP
 
 ;//------------------------------------------------------------------------------
-UpdateGameInformation PROC
+UpdateScoreOnScreen proc
+ 
+;//
+;// Description:
+;// Uses:
+;// Receives:
+;// Returns:
+;//------------------------------------------------------------------------------
+
+
+ret
+UpdateScoreOnScreen endp
+
+;//------------------------------------------------------------------------------
+UpdatePlayerLocation PROC
 ;//
 ;// Description: Don't Know May Not Be Used;
 ;// Receives: Nothing
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 .data
-playerChar byte " ", 0
-len byte 1
 .code
-
 xor eax, eax
 
 ;//Draw Player
@@ -346,28 +395,13 @@ INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
 mov al, " "
 call WriteChar
 
-xor ax, ax
-mov ax, FuturePOS.X
-mov CurrentPOS.X, ax
-
-xor ax, ax
-mov ax, FuturePOS.Y
-mov CurrentPOS.Y, ax
+mCopyCOORD CurrentPOS, FuturePOS
 
 INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS
-mov al, 0DBh;// offset playerChar
+mov al, 0DBh;//player char box thing
 call WriteChar
 
-;// call ReadConsoleOutputCharacter, consoleHandle, addr spaceChar, len * 2, addr FuturePOS, len
-
-
-
-
-
-;/*TODO(Nathan) Task List in order of operations for Update Game Information
- ; *1. Draw Time, Score, Player and Items onto Maze
- ; */
 ret
-UpdateGameInformation ENDP
+UpdatePlayerLocation ENDP
 
 end main
