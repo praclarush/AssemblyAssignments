@@ -41,6 +41,13 @@ TimerPOS COORD <0,0>
 
 ;//game info
 msgTiming byte "Time Remaining: ", 0
+timeStart DWORD 0
+timePrev DWORD 0
+timeElapsed DWORD 0
+
+maxTime DWORD 0
+
+
 msgScore byte "Score: ", 0
 score dword 0
 
@@ -81,9 +88,12 @@ LOCAL currentTextColor
 .data
 currentTextColor DWORD ?
 .code
-INVOKE SetConsoleCursorPosition, consoleHandle, coords
 push eax
 push edx
+
+INVOKE SetConsoleCursorPosition, consoleHandle, coords
+mWrite "                                             ", 0;//shady hack that should be fixed.
+INVOKE SetConsoleCursorPosition, consoleHandle, coords
 
 call GetTextColor
 mov currentTextColor, eax
@@ -94,7 +104,7 @@ call SetTextColor
 mov edx, offset message
 call WriteString
 
-IFNB <optionalIntValue>
+IFNB < optionalIntValue >
 xor eax,eax
 mov eax, optionalIntValue
 call WriteInt
@@ -154,9 +164,6 @@ jmp MainScreen
 
 ShowScore:
 call ScoreScreen
-jmp MainScreen
-
-GameOver:
 jmp MainScreen
 
 ;//Clean up Before Exit
@@ -249,6 +256,15 @@ MainGameLoop PROC USES eax
 
 call PrintMaze
 
+;//Start Game Time
+mov timeElapsed, 0
+mov timeStart, 0
+mov timePrev, 0
+mov maxTime, 40
+mov timeRemaining, 40
+call GetMSeconds
+mov timeStart, eax
+
 ;//Draw starting information on screen before entering game loop
 mPrintAtLocation msgScore, ScorePOS, white, score
 mPrintAtLocation msgTiming, TimerPOS, white
@@ -256,14 +272,65 @@ mPrintAtLocation msgTiming, TimerPOS, white
 call UpdatePlayerLocation
 
 GameLoop:
+xor ebx, ebx
 call GetPlayerInput
 
-;//TODO(Nathan): check for end game flag and break out of loop 
+cmp ebx, 1
+jz Win
+
+call UpdateTimer
+cmp timeRemaining, 0
+jz GameOver
 
 jmp GameLoop
 
+GameOver :
+call Clrscr
+mWrite "Game Over, you ran out of time", 13, 10, 0
+call Crlf
+call WaitMsg
+jmp quit
+
+Win:
+call Clrscr
+mWrite "you win, we'll do things here later like saving scores", 13, 10, 0;//TODO(Nathan): implement saving of scores
+call Crlf
+call WaitMsg
+jmp quit
+
+quit:
 ret
 MainGameLoop ENDP
+
+;//------------------------------------------------------------------------------
+UpdateTimer proc USES eax ebx edx
+;//
+;// Description: Updates the Timer in game
+;// Uses: eax ebx edx
+;// Receives: Nothing
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
+
+mov eax, timeElapsed
+mov timePrev, eax
+
+call GetMSeconds
+sub eax, timeStart
+mov edx, 0
+mov ebx, 1000
+div ebx
+
+mov timeElapsed, eax
+
+mov ebx, maxTime
+
+sub ebx, timeElapsed
+
+mov timeRemaining, ebx
+
+mPrintAtLocation msgtiming, TimerPOS, white, timeRemaining
+ret
+UpdateTimer endp
 
 ;//------------------------------------------------------------------------------
 GetPlayerInput PROC USES eax
@@ -306,7 +373,8 @@ invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
 call UpdatePlayerLocation
 
 .IF(ebx == 126)
-    ;//Game Over with Exit
+    mov ebx, 1
+    jmp Quit
 .ELSEIF(ebx == 42);// 157)
     add score, 15
 .ELSEIF(ebx == 234)
@@ -320,6 +388,9 @@ mCopyCOORD FuturePOS, CurrentPOS
 
 .ENDIF
 
+mov ebx, 0
+
+Quit:
 ret
 GetPlayerInput ENDP
 
@@ -373,8 +444,7 @@ call WaitMsg
  ; *1. Clear Screen
  ; *2. Read Score File
  ; *3. Print Scores onto Screen
- ; *4. Print Options for Return to Main Screen, Clear Score List
- ; *Notes: Read Player Input here?.
+ ; *4. Print Options for Return to Main Screen
  ; */
 ret
 ScoreScreen ENDP
@@ -393,6 +463,7 @@ SaveScore PROC;
 ret
 SaveScore ENDP
 
+;//------------------------------------------------------------------------------
 GenerateScorePickups PROC
 ;//
 ;// Description: will randomly place score pickups on the map
@@ -405,6 +476,7 @@ GenerateScorePickups PROC
 ret
 GenerateScorePickups ENDP
 
+;//------------------------------------------------------------------------------
 UpdatePlayerLocation PROC USES eax
 ;// Uses: al
 ;// Description: Don't Know May Not Be Used;
