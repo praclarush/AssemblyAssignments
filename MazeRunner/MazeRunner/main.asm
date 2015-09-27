@@ -4,6 +4,7 @@
 ;**              Computer Organization and Assembly Language
 ;** Author: Nathan Bremmer
 ;** -------------------------------------------------------------------------*/
+
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
@@ -27,17 +28,23 @@ consoleHandle DWORD ?
 cursorInfo CONSOLE_CURSOR_INFO <>
 buffer Byte BUFFER_SIZE DUP(? )
 
-;//Player data
+;//Player data - x, y
 ALIGN WORD
-FuturePOS COORD <0,1> ;//x, y
+FuturePOS COORD <0,1>
 ALIGN WORD
 CurrentPOS COORD <0,1>
 ALIGN WORD
-ScorePOS COORD <>
+ScorePOS COORD <0,0>
+ALIGN WORD 
+TimerPOS COORD <0,0>
 
 
 ;//game info
+msgTiming byte "Time Remaining: ", 0
+msgScore byte "Score: ", 0
 score dword 0
+
+
 .code
 
 ;//------------------------------------------------------------------------------
@@ -48,6 +55,7 @@ mCopyCOORD MACRO destCOORD:req, sourceCOORD:req
 ;// Receives: a destination coord and a source coord struct; 
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
+push ax
 
 xor ax, ax
 mov ax, (coord ptr sourceCOORD).X
@@ -57,6 +65,46 @@ xor ax, ax
 mov ax, (coord ptr sourceCOORD).Y
 mov(coord ptr destCOORD).Y, ax
 
+pop ax
+ENDM
+
+;//------------------------------------------------------------------------------
+mPrintAtLocation MACRO message : req, coords : req, color : req, optionalIntValue
+LOCAL currentTextColor
+;//
+;// Description: prints a string in the specified color at the specified location
+;//              if an optionalIntValue is included print it after the message
+;// Avoid Using: eax, edx
+;// Receives:Message, coords, color, optional Value
+;// Returns:Nothing
+;//------------------------------------------------------------------------------
+.data
+currentTextColor DWORD ?
+.code
+INVOKE SetConsoleCursorPosition, consoleHandle, coords
+push eax
+push edx
+
+call GetTextColor
+mov currentTextColor, eax
+
+mov eax, color
+call SetTextColor
+
+mov edx, offset message
+call WriteString
+
+IFNB <optionalIntValue>
+xor eax,eax
+mov eax, optionalIntValue
+call WriteInt
+ENDIF
+
+mov eax, currentTextColor
+call SetTextColor
+
+pop edx
+pop eax
 ENDM
 
 ;//------------------------------------------------------------------------------
@@ -75,53 +123,42 @@ mov cursorInfo.bVisible, FALSE
 INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
 mov score, 0
+xor ax, ax
+movzx ax, mapWidth
+add ax, 1
+mov ScorePOS.X, ax
+mov ScorePOS.Y, 2
 
-;//mov ScorePOS.Y, 10
-;//xor ax, ax
-;//
-;//mov ScorePOS.x, mapWidth
+mov TimerPOS.X, ax
+mov TimerPOS.Y, 1
 
 ;//End Init
 
-;//MainScreen:
-;//call MenuScreen
-;//
-;//cmp ax, 1
-;//jz StartGame
-;//cmp ax, 2
-;//jz ShowOptions
-;//cmp ax, 3
-;//jz ShowScore
-;//cmp ax, 4
-;//jz ExitProgram
-;//
-;//jmp MainScreen
-;//
-;//StartGame:
-;// TODO(Nathan): Need to default COORS for current and future player POS for each new game
-call PrintMaze
-call UpdatePlayerLocation
+MainScreen:
+xor eax,eax
+call MenuScreen
+
+cmp ax, 1
+jz StartGame
+cmp ax, 2
+jz ShowScore
+cmp ax, 3
+jz ExitProgram
+
+jmp MainScreen
+
+
+StartGame:
 call MainGameLoop
-;//jmp MainScreen
-;//
-;//ShowScore:
-;//call ScoreScreen
-;//
-;//jmp MainScreen
-;//
-;//ShowOptions:
-;//call OptionsScreen
-;//
-;// jmp MainScreen
+jmp MainScreen
 
-<<<<<<< HEAD
-=======
- invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
+ShowScore:
+call ScoreScreen
+jmp MainScreen
 
-;//GameOver:
-;//jmp ExitProgram
+GameOver:
+jmp MainScreen
 
->>>>>>> aee4516cac7edfcd86250d3d008b0e028630b258
 ;//Clean up Before Exit
 mov cursorInfo.bVisible, TRUE
 INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
@@ -172,41 +209,20 @@ ret
 PrintMaze ENDP
 
 ;//------------------------------------------------------------------------------
-<<<<<<< HEAD
 GetValueFromMatrix PROC USES eax ecx edx, 
-matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte    
-=======
-GenerateScorePickups PROC
-;//
-;// Description: will randomly place score pickups on the map
-;// Uses: Nothing
-;// Receives: Nothing
-;// Returns: Nothing
-;// Remarks: this might end up as a macro for easer calling.
-;//------------------------------------------------------------------------------
-
-ret
-GenerateScorePickups ENDP
-
-;//------------------------------------------------------------------------------
-GetValueFromMatrix PROC USES eax ebx ecx edx, 
 matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
     LOCAL baseAddress : BYTE
->>>>>>> aee4516cac7edfcd86250d3d008b0e028630b258
 ;//
 ;// Description: The Main Game Loop
-;// Uses: 
-;// Receives:
+;// Uses: eax, ecx, edx
+;// Receives: a Pointer to COORDs, nRows and, NCols
 ;// Returns: the value in the array at the location specified in matrix using ebx
-;// Notes: calc row offset
-;//        row = cols * y
-;//        so index = (cols * y) + x
 ;//------------------------------------------------------------------------------
 .data
 bytesInRow dword ?
 .code
 xor eax, eax;//y || row
-xor ecx, ecx;//x || cols
+xor ecx, ecx;//x || col
 xor ebx, ebx
 
 movzx ecx, (coord ptr coords).X;//col
@@ -229,25 +245,36 @@ MainGameLoop PROC USES eax
 .data
 
 .code
-GameLoop:
+;// TODO(Nathan): Need to default COORS for current and future player POS for each new game
 
+call PrintMaze
+
+;//Draw starting information on screen before entering game loop
+mPrintAtLocation msgScore, ScorePOS, white, score
+mPrintAtLocation msgTiming, TimerPOS, white
+
+call UpdatePlayerLocation
+
+GameLoop:
 call GetPlayerInput
 
- jmp GameLoop
+;//TODO(Nathan): check for end game flag and break out of loop 
 
-;//TODO(nathan): 
-;// Update Clock
-;// get user input
-;// move player
-;// check if at exit
-;// update score
+jmp GameLoop
 
 ret
 MainGameLoop ENDP
 
-
+;//------------------------------------------------------------------------------
 GetPlayerInput PROC USES eax
 LOCAL keyPress : BYTE
+;//
+;// Description: Gets the players Input then updates the character POS, Score and
+;//              and timer on the screen
+;// Uses: eax
+;// Receives: Nothing
+;// Returns: value stored in gameOver variable as a 1 or 0
+;//------------------------------------------------------------------------------
 .data
 
 .code
@@ -272,19 +299,21 @@ dec FuturePOS.X
 
 xor ebx, ebx
 invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
-;// check if move is valid
 
+;//Check if Move is valid
 .IF(ebx != 0 && ebx != 13 && ebx != 12 && ebx != 43 && ebx != 45 && ebx != 124 && keyPress != 1)
 
 call UpdatePlayerLocation
 
 .IF(ebx == 126)
-;//Game Over with Exit
+    ;//Game Over with Exit
 .ELSEIF(ebx == 42);// 157)
-add score, 15
+    add score, 15
 .ELSEIF(ebx == 234)
-add score, 10
+    add score, 10
 .ENDIF
+
+mPrintAtLocation msgScore, ScorePOS, white, score
 
 .ElSE
 mCopyCOORD FuturePOS, CurrentPOS
@@ -295,15 +324,15 @@ ret
 GetPlayerInput ENDP
 
 ;//------------------------------------------------------------------------------
-MenuScreen PROC USES eax edx
+MenuScreen PROC USES edx
 ;//
 ;// Description: Prints the Main Menu and Reads user input
-;// Uses: eax and edx
+;// Uses: edx
 ;// Receives: Nothing
 ;// Returns: player menu choice stored in AX
 ;//------------------------------------------------------------------------------
 .data
-msgMenu byte "1: Play", 13, 10, "2: Options", 13, 10, "3: Scores", 13, 10, "4: Exit", 13, 10, 0
+msgMenu byte "1: Play", 13, 10, "2: Scores", 13, 10, "3: Exit", 13, 10, 0
 
 .code
 xor eax, eax
@@ -360,65 +389,24 @@ SaveScore PROC;
 ;//------------------------------------------------------------------------------
 .data
 .code
-;/*TODO(Nathan) Task List in order of operations for SaveScore
- ; *1. Clear Screen
- ; *2. Save Score to File
- ; */
+
 ret
 SaveScore ENDP
 
-;//------------------------------------------------------------------------------
-OptionsScreen PROC USES eax edx;
+GenerateScorePickups PROC
 ;//
-;// Description: Displays the Options and Reads Input from the User 
-;//              and Updates global flags
-;// Uses: eax and edx
+;// Description: will randomly place score pickups on the map
+;// Uses: Nothing
+;// Receives: Nothing
 ;// Returns: Nothing
-;// Remarks: this option is on the cutting block; will be first to go if out of time
+;// Remarks: this might end up as a macro for easer calling.
 ;//------------------------------------------------------------------------------
-.data
-msgOptions byte "Options", 0
-
-.code
-xor eax, eax
-xor edx, edx
-
-call Clrscr
-
-mov edx, OFFSET msgOptions
-call WriteString
-
-call WaitMsg
-
-;/*TODO(Nathan) Task List in order of operations for Options
- ; *1. Clear Screen
- ; *2. Enable Timer
- ; */
-ret
-OptionsScreen ENDP
-
-;//------------------------------------------------------------------------------
-<<<<<<< HEAD
-UpdateScoreOnScreen proc
- 
-;//
-;// Description:
-;// Uses:
-;// Receives:
-;// Returns:
-;//------------------------------------------------------------------------------
-
 
 ret
-UpdateScoreOnScreen endp
+GenerateScorePickups ENDP
 
-;//------------------------------------------------------------------------------
-UpdatePlayerLocation PROC
-;//
-=======
-UpdateGameInformation PROC uses al
+UpdatePlayerLocation PROC USES eax
 ;// Uses: al
->>>>>>> aee4516cac7edfcd86250d3d008b0e028630b258
 ;// Description: Don't Know May Not Be Used;
 ;// Receives: the player current and future locations in global variables
 ;// Returns: nothing
