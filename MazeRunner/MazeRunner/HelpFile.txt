@@ -1,0 +1,8 @@
+Welcome!
+To goal is to reach the end of the maze marked with '~'
+before the timer runs out picking up points along the way
+To navigate the maze:
+W - move upwards
+S - move downwards
+A - move left
+D - move Right.

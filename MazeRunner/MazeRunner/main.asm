@@ -5,6 +5,16 @@
 ;** Author: Nathan Bremmer
 ;** -------------------------------------------------------------------------*/
 
+;//Things left to do
+;//1: reset player POS on start of game
+;//2: Save Scores to text file
+;//3: Read Scores from text file
+;//4: randomly place scoring object on map
+;//Optional if we have time
+;//1:Options Menu
+;// a: turn off scoring objects
+;// b: set time limit
+
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
@@ -26,7 +36,8 @@ mapWidth BYTE 23
 mapHeight BYTE 20
 consoleHandle DWORD ?
 cursorInfo CONSOLE_CURSOR_INFO <>
-buffer Byte BUFFER_SIZE DUP(? )
+buffer Byte BUFFER_SIZE DUP(?)
+helpBuffer Byte BUFFER_SIZE DUP(?)
 
 ;//Player data - x, y
 ALIGN WORD
@@ -44,7 +55,7 @@ msgTiming byte "Time Remaining: ", 0
 timeStart DWORD 0
 timePrev DWORD 0
 timeElapsed DWORD 0
-
+timeRemaining DWORD 0
 maxTime DWORD 0
 
 
@@ -54,6 +65,7 @@ score dword 0
 
 .code
 
+;//MACROS
 ;//------------------------------------------------------------------------------
 mCopyCOORD MACRO destCOORD:req, sourceCOORD:req
 ;//
@@ -153,10 +165,18 @@ jz StartGame
 cmp ax, 2
 jz ShowScore
 cmp ax, 3
+jz Help
+cmp ax, 4
 jz ExitProgram
 
 jmp MainScreen
 
+
+Help:
+call PrintHelpFile
+call Crlf
+call WaitMsg
+jmp MainScreen
 
 StartGame:
 call MainGameLoop
@@ -175,10 +195,11 @@ invoke ExitProcess, 0
 main endp
 
 ;//Procedures
+
 ;//------------------------------------------------------------------------------
 PrintMaze PROC USES edx ecx eax ebx
 ;//
-;// Description: Reads the Map from a file into a buffer array and prints it to the screen
+;// Description: Reads the Help file and prints it to the screen.
 ;// Uses: edx, ecx, eax, and ebx
 ;// Receives: Nothing
 ;// Returns: array stored in buffer
@@ -214,6 +235,46 @@ call CloseFile
 
 ret
 PrintMaze ENDP
+
+;//------------------------------------------------------------------------------
+PrintHelpFile PROC USES edx ecx eax ebx
+;//
+;// Description: Reads the Map from a file into a buffer array and prints it to the screen
+;// Uses: edx, ecx, eax, and ebx
+;// Receives: Nothing
+;// Returns: array stored in buffer
+;//------------------------------------------------------------------------------
+
+.data
+helpFileName byte "HelpFile.txt", 0
+helpFileHandle HANDLE ?
+.code
+call Clrscr
+mov edx, OFFSET helpFileName
+call OpenInputFile
+mov helpFileHandle, eax
+
+mov edx, OFFSET helpBuffer
+mov ecx, BUFFER_SIZE
+call ReadFromFile
+
+;//clean registers
+mov ecx, 0
+mov eax, 0
+mov ebx, 0
+
+mov edx, OFFSET helpBuffer
+mov ecx, SIZEOF helpBuffer
+
+;//Setup map size and player location
+call WriteString
+call Crlf
+
+mov eax, helpFileHandle
+call CloseFile
+
+ret
+PrintHelpFile ENDP
 
 ;//------------------------------------------------------------------------------
 GetValueFromMatrix PROC USES eax ecx edx, 
@@ -403,7 +464,7 @@ MenuScreen PROC USES edx
 ;// Returns: player menu choice stored in AX
 ;//------------------------------------------------------------------------------
 .data
-msgMenu byte "1: Play", 13, 10, "2: Scores", 13, 10, "3: Exit", 13, 10, 0
+msgMenu byte "1: Play", 13, 10, "2: Scores", 13, 10, "3: Help", 13, 10, "4: Exit", 13, 10, 0
 
 .code
 xor eax, eax
