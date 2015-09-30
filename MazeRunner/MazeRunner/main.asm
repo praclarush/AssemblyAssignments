@@ -31,13 +31,14 @@ BUFFER_SIZE = 5000
 
 .data
 
+;//Console Variables
+consoleTitle byte "Maze Runner", 0
+consoleHandle DWORD ?
+cursorInfo CONSOLE_CURSOR_INFO <>
+
 ;//Map data
 mapWidth BYTE 23
 mapHeight BYTE 20
-consoleHandle DWORD ?
-cursorInfo CONSOLE_CURSOR_INFO <>
-buffer Byte BUFFER_SIZE DUP(?)
-helpBuffer Byte BUFFER_SIZE DUP(?)
 
 ;//Player data - x, y
 ALIGN WORD
@@ -57,12 +58,18 @@ timePrev DWORD 0
 timeElapsed DWORD 0
 timeRemaining DWORD 0
 maxTime DWORD 0
-
-
 msgScore byte "Score: ", 0
 score dword 0
 
+;//File Info
+scoreFileName byte "scores.dat", 0
+helpFileName byte "HelpFile.dat", 0
+levelfileName byte "level.dat", 0
 
+fileBuffer Byte BUFFER_SIZE DUP(? )
+levelBuffer Byte BUFFER_SIZE DUP(? )
+helpFileHandle HANDLE ?
+fileHandle HANDLE ?
 .code
 
 ;//MACROS
@@ -144,6 +151,8 @@ INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo
 mov cursorInfo.bVisible, FALSE
 INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
+INVOKE SetConsoleTitle, addr consoleTitle
+
 mov score, 0
 xor ax, ax
 movzx ax, mapWidth
@@ -155,6 +164,10 @@ mov TimerPOS.X, ax
 mov TimerPOS.Y, 1
 
 ;//End Init
+
+;// call SaveScore
+
+
 
 MainScreen:
 xor eax,eax
@@ -197,24 +210,20 @@ main endp
 ;//Procedures
 
 ;//------------------------------------------------------------------------------
-PrintMaze PROC USES edx ecx eax ebx
+PrintScores PROC USES edx ecx eax ebx
 ;//
-;// Description: Reads the Help file and prints it to the screen.
+;// Description: Reads the Score file and prints it to the screen.
 ;// Uses: edx, ecx, eax, and ebx
 ;// Receives: Nothing
-;// Returns: array stored in buffer
+;// Returns: array stored in fileBuffer
 ;//------------------------------------------------------------------------------
 
-.data
-fileName byte "level.dat", 0
-fileHandle HANDLE ?
 .code
-call Clrscr
-mov edx, OFFSET fileName
+mov edx, OFFSET scoreFileName
 call OpenInputFile
 mov fileHandle, eax
 
-mov edx, OFFSET buffer
+mov edx, OFFSET fileBuffer
 mov ecx, BUFFER_SIZE
 call ReadFromFile
 
@@ -223,8 +232,45 @@ mov ecx, 0
 mov eax, 0
 mov ebx, 0
 
-mov edx, OFFSET buffer
-mov ecx, SIZEOF buffer
+mov edx, OFFSET fileBuffer
+mov ecx, SIZEOF fileBuffer
+
+;//Setup map size and player location
+call WriteString
+call Crlf
+
+mov eax, fileHandle
+call CloseFile
+
+ret
+PrintScores ENDP
+
+;//------------------------------------------------------------------------------
+PrintMaze PROC USES edx ecx eax ebx
+;//
+;// Description: Reads the Maze Map data file and prints it to the screen.
+;// Uses: edx, ecx, eax, and ebx
+;// Receives: Nothing
+;// Returns: array stored in levelBuffer
+;//------------------------------------------------------------------------------
+
+.code
+call Clrscr
+mov edx, OFFSET levelfileName
+call OpenInputFile
+mov fileHandle, eax
+
+mov edx, OFFSET levelBuffer
+mov ecx, BUFFER_SIZE
+call ReadFromFile
+
+;//clean registers
+mov ecx, 0
+mov eax, 0
+mov ebx, 0
+
+mov edx, OFFSET levelBuffer
+mov ecx, SIZEOF levelBuffer
 
 ;//Setup map size and player location
 call WriteString
@@ -239,22 +285,18 @@ PrintMaze ENDP
 ;//------------------------------------------------------------------------------
 PrintHelpFile PROC USES edx ecx eax ebx
 ;//
-;// Description: Reads the Map from a file into a buffer array and prints it to the screen
+;// Description: Reads the help file into a buffer array and prints it to the screen
 ;// Uses: edx, ecx, eax, and ebx
 ;// Receives: Nothing
-;// Returns: array stored in buffer
+;// Returns: array stored in fileBuffer
 ;//------------------------------------------------------------------------------
-
-.data
-helpFileName byte "HelpFile.txt", 0
-helpFileHandle HANDLE ?
 .code
 call Clrscr
 mov edx, OFFSET helpFileName
 call OpenInputFile
 mov helpFileHandle, eax
 
-mov edx, OFFSET helpBuffer
+mov edx, OFFSET fileBuffer
 mov ecx, BUFFER_SIZE
 call ReadFromFile
 
@@ -263,8 +305,8 @@ mov ecx, 0
 mov eax, 0
 mov ebx, 0
 
-mov edx, OFFSET helpBuffer
-mov ecx, SIZEOF helpBuffer
+mov edx, OFFSET fileBuffer
+mov ecx, SIZEOF fileBuffer
 
 ;//Setup map size and player location
 call WriteString
@@ -298,7 +340,7 @@ movzx eax, (coord ptr coords).Y;//row
 mul nCols;//multiply eax by nCols
 
 add ecx, eax
-movzx ebx, [buffer + 1 * ecx]
+movzx ebx, [levelBuffer + 1 * ecx]
 ret
 GetValueFromMatrix ENDP
 
@@ -426,7 +468,7 @@ dec FuturePOS.X
 .ENDIF
 
 xor ebx, ebx
-invoke GetValueFromMatrix, addr buffer, FuturePOS, mapHeight, mapWidth
+invoke GetValueFromMatrix, addr levelBuffer, FuturePOS, mapHeight, mapWidth
 
 ;//Check if Move is valid
 .IF(ebx != 0 && ebx != 13 && ebx != 12 && ebx != 43 && ebx != 45 && ebx != 124 && keyPress != 1)
@@ -499,6 +541,9 @@ call Clrscr
 
 mov edx, OFFSET msgScoreTitle
 call WriteString
+call Crlf
+
+call PrintScores
 
 call WaitMsg
 ;/*TODO(Nathan) Task List in order of operations for Score Screen
@@ -511,7 +556,7 @@ ret
 ScoreScreen ENDP
 
 ;//------------------------------------------------------------------------------
-SaveScore PROC;
+SaveScore PROC USES edx ecx eax ebx
 ;//
 ;// Description: Saves the Score and Completion Time to a file 
 ;// Uses:
@@ -519,8 +564,60 @@ SaveScore PROC;
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 .data
+scoreSaveFileHandle Handle ?
+stringLength dword ?
+
 .code
 
+;//set cursor visible so that user can see where they are typing 
+mov cursorInfo.bVisible, TRUE
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
+
+call Clrscr
+
+mWrite "Congratulations on wining!"
+call Crlf
+mWrite "score: "
+;//TODO(Nathan): Print Score
+call Crlf
+mWrite "Time Remaining: "
+;//TODO(Nathan): Print Time Remaining.
+call Crlf
+
+;//Get user input
+mWrite "Please Enter a Name: "
+mov ecx, BUFFER_SIZE
+mov edx, OFFSET fileBuffer
+call ReadString
+mov stringLength, eax
+
+
+;// open file for writing Note:(Nathan): Had to do it this way as existing library doesn't allow for appending of file
+INVOKE CreateFile, ADDR scoreFileName, GENERIC_WRITE, DO_NOT_SHARE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0
+
+mov scoreSaveFileHandle, eax
+.IF(eax == INVALID_HANDLE_VALUE)
+call Crlf
+mWrite "ERROR: cannot open scores.dat file"
+call Crlf
+call WaitMsg
+jmp Quit
+.ENDIF
+
+invoke SetFilePointer, scoreSaveFileHandle, 0, 0, FILE_END
+
+INVOKE WriteFile, scoreSaveFileHandle, addr score, stringLength, addr stringLength, 0
+
+INVOKE WriteFile, scoreSaveFileHandle, addr fileBuffer, stringLength, addr stringLength, 0
+
+INVOKE CloseHandle, scoreSaveFileHandle
+
+;//set cursor invisible so that user doesn't see the cursor while playing the game
+mov cursorInfo.bVisible, FALSE
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
+
+Quit:
 ret
 SaveScore ENDP
 
