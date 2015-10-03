@@ -1,18 +1,9 @@
 ;/* ---------------------------------------------------------------------------
-;** File: main.asm
-;** Description: Maze Runner Game for Final Project in CSPG360
-;**              Computer Organization and Assembly Language
-;** Author: Nathan Bremmer
-;** -------------------------------------------------------------------------*/
-
-;//Things left to do
-;//1: reset player POS on start of game
-;//2: Save Scores to text file
-;//4: randomly place scoring object on map
-;//Optional if we have time
-;//1:Options Menu
-;// a: turn off scoring objects
-;// b: set time limit
+ ;** File: main.asm
+ ;** Description: Maze Runner Game for Final Project in CSPG360
+ ;**              Computer Organization and Assembly Language
+ ;** Author: Nathan Bremmer
+ ;** -------------------------------------------------------------------------*/
 
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
@@ -33,7 +24,7 @@ BUFFER_SIZE = 5000
 ;//Console Variables
 consoleTitle byte "Maze Runner", 0
 consoleHandle DWORD ?
-cursorInfo CONSOLE_CURSOR_INFO <>
+cursorInfo CONSOLE_CURSOR_INFO < >
 
 ;//Map data
 mapWidth BYTE 23
@@ -41,13 +32,15 @@ mapHeight BYTE 20
 
 ;//Locations of lots of things - x, y
 ALIGN WORD
-FuturePOS COORD <0,1>
+FuturePOS COORD <0, 1>
 ALIGN WORD
-CurrentPOS COORD <0,1>
+CurrentPOS COORD <0, 1>
 ALIGN WORD
-ScorePOS COORD <0,0>
-ALIGN WORD 
-TimerPOS COORD <0,0>
+ScorePOS COORD <0, 0>
+ALIGN WORD
+TimerPOS COORD <0, 0>
+ALIGN WORD
+MarkerPOS COORD < 0, 0 >
 
 ;//game info
 msgTiming byte "Time Remaining: ", 0
@@ -72,7 +65,7 @@ fileHandle HANDLE ?
 
 ;//MACROS
 ;//------------------------------------------------------------------------------
-mCopyCOORD MACRO destCOORD:req, sourceCOORD:req
+mCopyCOORD MACRO destCOORD : req, sourceCOORD : req
 ;//
 ;// Description: Copies the values of one COORD struct to another
 ;// Avoid Using ax
@@ -80,13 +73,13 @@ mCopyCOORD MACRO destCOORD:req, sourceCOORD:req
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 push ax
-xor ax, ax                          ;//clean ax register
-mov ax, (coord ptr sourceCOORD).X   ;//move the value of sourceCOORD.x to the ax register
-mov(coord ptr destCOORD).X, ax      ;//move the value of the ax register to destCOORD.x
+xor ax, ax                              ;//clean ax register
+mov ax, (coord ptr sourceCOORD).X       ;//move the value of sourceCOORD.x to the ax register
+mov(coord ptr destCOORD).X, ax          ;//move the value of the ax register to destCOORD.x
 
-xor ax, ax                          ;//clean ax register
-mov ax, (coord ptr sourceCOORD).Y   ;//move the value of sourceCOORD.x to the ax register
-mov(coord ptr destCOORD).Y, ax      ;//move the value of the ax register to destCOORD.x
+xor ax, ax                              ;//clean ax register
+mov ax, (coord ptr sourceCOORD).Y       ;//move the value of sourceCOORD.x to the ax register
+mov(coord ptr destCOORD).Y, ax          ;//move the value of the ax register to destCOORD.x
 
 pop ax
 ENDM
@@ -142,59 +135,59 @@ main proc
 ;//------------------------------------------------------------------------------
 
 ;//Init
-INVOKE GetStdHandle, STD_OUTPUT_HANDLE                      ;//get the handle for the console window
-mov consoleHandle, eax                                      ;//store the handle in consoleHandle
-INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo ;//get the cursor info struct
-mov cursorInfo.bVisible, FALSE                              ;//set the cursor visibility to false in the info struct
-INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo ;//write the info struct to the console
-INVOKE SetConsoleTitle, addr consoleTitle                   ;//set the Console Title
+INVOKE GetStdHandle, STD_OUTPUT_HANDLE                          ;//get the handle for the console window
+mov consoleHandle, eax                                          ;//store the handle in consoleHandle
+INVOKE GetConsoleCursorInfo, consoleHandle, addr cursorInfo     ;//get the cursor info struct
+mov cursorInfo.bVisible, FALSE                                  ;//set the cursor visibility to false in the info struct
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo     ;//write the info struct to the console
+INVOKE SetConsoleTitle, addr consoleTitle                       ;//set the Console Title
 
 ;//set up Positions for Score and Timer
-mov score, 0                                                ;//reset score
-xor ax, ax                                                  ;//clean ax register
-movzx ax, mapWidth                                          ;// set ax to the mapWidth
-add ax, 1                                                   ;//add 1 to ax
-mov ScorePOS.X, ax                                          ;//set the value of ax to the ScorePOS.X
-mov ScorePOS.Y, 2                                           ;// set ScorePOS.y to 2
-mov TimerPOS.X, ax                                          ;//set the value of ax to the TimerPOS.x
-mov TimerPOS.Y, 1                                           ;//set the value of TimerPOS.y to 1
+mov score, 0                                                    ;//reset score
+xor ax, ax                                                      ;//clean ax register
+movzx ax, mapWidth                                              ;//set ax to the mapWidth
+add ax, 1                                                       ;//add 1 to ax
+mov ScorePOS.X, ax                                              ;//set the value of ax to the ScorePOS.X
+mov ScorePOS.Y, 2                                               ;// set ScorePOS.y to 2
+mov TimerPOS.X, ax                                              ;//set the value of ax to the TimerPOS.x
+mov TimerPOS.Y, 1                                               ;//set the value of TimerPOS.y to 1
 
 ;//End Init
 
 MainScreen:
 xor eax, eax
-call MenuScreen                                             ;//show the main Menu
+call MenuScreen;//show the main Menu
 
-cmp ax, 1                                                   ;//if the player choice is 1 jump to startGame
+cmp ax, 1                                                       ;//if the player choice is 1 jump to startGame
 jz StartGame
-cmp ax, 2                                                   ;//if the player choice is 2 jump to ShowScore
+cmp ax, 2                                                       ;//if the player choice is 2 jump to ShowScore
 jz ShowScore
-cmp ax, 3                                                   ;//if the player choice is 3 jump to Help
+cmp ax, 3                                                       ;//if the player choice is 3 jump to Help
 jz Help
-cmp ax, 4                                                   ;//if the player choice is 4 jump to ExitProgram
+cmp ax, 4                                                       ;//if the player choice is 4 jump to ExitProgram
 jz ExitProgram
 
-jmp MainScreen                                              ;//if no choice was made reshow the Main Menu
+jmp MainScreen                                                  ;//if no choice was made reshow the Main Menu
 
 
 Help:
-call PrintHelpFile                                          ;//Show the Help file
-jmp MainScreen                                              ;//jump to main menu
+call PrintHelpFile                                              ;//Show the Help file
+jmp MainScreen                                                  ;//jump to main menu
 
 StartGame:
-call MainGameLoop                                           ;//Begin the Game
-jmp MainScreen                                              ;//jump to main menu
+call MainGameLoop                                               ;//Begin the Game
+jmp MainScreen                                                  ;//jump to main menu
 
 ShowScore:
-call ScoreScreen                                            ;//show the Score Screen
-jmp MainScreen                                              ;//jump to Main Menu
+call ScoreScreen                                                ;//show the Score Screen
+jmp MainScreen                                                  ;//jump to Main Menu
 
 ;//Clean up Before Exit
-mov cursorInfo.bVisible, TRUE                               ;//set the cursor to visible
-INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo ;//write the cursor struct to the console
+mov cursorInfo.bVisible, TRUE                                   ;//set the cursor to visible
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo     ;//write the cursor struct to the console
 
 ExitProgram:
-invoke ExitProcess, 0                                       ;//exit application thread
+invoke ExitProcess, 0                                           ;//exit application thread
 main endp
 
 ;//Procedures
@@ -209,27 +202,27 @@ PrintScores PROC USES edx ecx eax ebx
 ;//------------------------------------------------------------------------------
 
 .code
-mov edx, OFFSET scoreFileName       ;//move the address of scoreFileName to edx
-call OpenInputFile                  ;//open the file specified in edx
-mov fileHandle, eax                 ;//move the file Handle to fileHandle
+mov edx, OFFSET scoreFileName   ;//move the address of scoreFileName to edx
+call OpenInputFile              ;//open the file specified in edx
+mov fileHandle, eax             ;//move the file Handle to fileHandle
 
-mov edx, OFFSET fileBuffer          ;//move the address of the fileBuffer to edx
-mov ecx, BUFFER_SIZE                ;//move the size of the fileBuffer to ecx
-call ReadFromFile                   ;//read the file into edx/fileBuffer
+mov edx, OFFSET fileBuffer      ;//move the address of the fileBuffer to edx
+mov ecx, BUFFER_SIZE            ;//move the size of the fileBuffer to ecx
+call ReadFromFile               ;//read the file into edx/fileBuffer
 
 ;//clean registers
 mov ecx, 0
 mov eax, 0
 mov ebx, 0
 
-mov edx, OFFSET fileBuffer          ;//move the address of the fileBuffer to edx; this is due to edx possibly being changed before now
-mov ecx, SIZEOF fileBuffer          ;//move the size of the fileBuffer to ecx
+mov edx, OFFSET fileBuffer      ;//move the address of the fileBuffer to edx; this is due to edx possibly being changed before now
+mov ecx, SIZEOF fileBuffer      ;//move the size of the fileBuffer to ecx
 
-call WriteString                    ;//write the contents of edx to the screen
-call Crlf                           ;//print a new line
+call WriteString                ;//write the contents of edx to the screen
+call Crlf                       ;//print a new line
 
-mov eax, fileHandle                 ;//move the fileHandle to eax
-call CloseFile                      ;//close the fileHandle
+mov eax, fileHandle             ;//move the fileHandle to eax
+call CloseFile                  ;//close the fileHandle
 
 ret
 PrintScores ENDP
@@ -245,27 +238,27 @@ PrintMaze PROC USES edx ecx eax ebx
 
 .code
 call Clrscr
-mov edx, OFFSET levelfileName       ;//move the address of levelfileName to edx
-call OpenInputFile                  ;//open the file specified in edx
-mov fileHandle, eax                 ;//move the file Handle to fileHandle
+mov edx, OFFSET levelfileName   ;//move the address of levelfileName to edx
+call OpenInputFile              ;//open the file specified in edx
+mov fileHandle, eax             ;//move the file Handle to fileHandle
 
-mov edx, OFFSET levelBuffer         ;//move the address of the levelBuffer to edx
-mov ecx, BUFFER_SIZE                ;//move the size of the levelBuffer to ecx
-call ReadFromFile                   ;//read the file into edx/levelBuffer
+mov edx, OFFSET levelBuffer     ;//move the address of the levelBuffer to edx
+mov ecx, BUFFER_SIZE            ;//move the size of the levelBuffer to ecx
+call ReadFromFile               ;//read the file into edx/levelBuffer
 
 ;//clean registers
 mov ecx, 0
 mov eax, 0
 mov ebx, 0
 
-mov edx, OFFSET levelBuffer         ;//move the address of the levelBuffer to edx; this is due to edx possibly being changed before now
-mov ecx, SIZEOF levelBuffer         ;//move the size of the levelBuffer to ecx
+mov edx, OFFSET levelBuffer     ;//move the address of the levelBuffer to edx; this is due to edx possibly being changed before now
+mov ecx, SIZEOF levelBuffer     ;//move the size of the levelBuffer to ecx
 
-call WriteString                    ;//write the contents of edx to the screen
-call Crlf                           ;//print a new line
+call WriteString                ;//write the contents of edx to the screen
+call Crlf                       ;//print a new line
 
-mov eax, fileHandle                 ;//move the fileHandle to eax
-call CloseFile                      ;//close the fileHandle
+mov eax, fileHandle             ;//move the fileHandle to eax
+call CloseFile                  ;//close the fileHandle
 
 ret
 PrintMaze ENDP
@@ -280,39 +273,39 @@ PrintHelpFile PROC USES edx ecx eax ebx
 ;//------------------------------------------------------------------------------
 .code
 call Clrscr
-mov edx, OFFSET helpFileName        ;//move the address of helpFileName to edx
-call OpenInputFile                  ;//open the file specified in edx
-mov helpFileHandle, eax             ;//move the file Handle to helpFileHandle
+mov edx, OFFSET helpFileName    ;//move the address of helpFileName to edx
+call OpenInputFile              ;//open the file specified in edx
+mov helpFileHandle, eax         ;//move the file Handle to helpFileHandle
 
-mov edx, OFFSET fileBuffer          ;//move the address of the fileBuffer to edx
-mov ecx, BUFFER_SIZE                ;//move the size of the fileBuffer to ecx
-call ReadFromFile                   ;//read the file into edx/fileBuffer
+mov edx, OFFSET fileBuffer      ;//move the address of the fileBuffer to edx
+mov ecx, BUFFER_SIZE            ;//move the size of the fileBuffer to ecx
+call ReadFromFile               ;//read the file into edx/fileBuffer
 
 ;//clean registers
 mov ecx, 0
 mov eax, 0
 mov ebx, 0
 
-mov edx, OFFSET fileBuffer          ;//move the address of the fileBuffer to edx; this is due to edx possibly being changed before now
-mov ecx, SIZEOF fileBuffer          ;//move the size of the fileBuffer to ecx
+mov edx, OFFSET fileBuffer      ;//move the address of the fileBuffer to edx; this is due to edx possibly being changed before now
+mov ecx, SIZEOF fileBuffer      ;//move the size of the fileBuffer to ecx
 
-call WriteString                    ;//write the contents of edx to the screen
-call Crlf                           ;//print a new line
+call WriteString                ;//write the contents of edx to the screen
+call Crlf                       ;//print a new line
 
-mov eax, helpFileHandle             ;//move the fileHandle to eax
-call CloseFile                      ;//close the fileHandle
+mov eax, helpFileHandle         ;//move the fileHandle to eax
+call CloseFile                  ;//close the fileHandle
 
-call Crlf                           ;//print a new line
-call WaitMsg                        ;//print wait prompt
+call Crlf                       ;//print a new line
+call WaitMsg                    ;//print wait prompt
 ret
 PrintHelpFile ENDP
 
 ;//------------------------------------------------------------------------------
-GetValueFromMatrix PROC USES eax ecx edx, 
+GetValueFromMatrix PROC USES eax ecx edx,
 matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte
-    LOCAL baseAddress : BYTE
-;//
-;// Description: The Main Game Loop
+        LOCAL baseAddress : BYTE
+        ;//
+;// Description: Gets a value at the specified location from the map array
 ;// Uses: eax, ecx, edx
 ;// Receives: a Pointer to COORDs, nRows and, NCols
 ;// Returns: the value in the array at the location specified in matrix using ebx
@@ -330,9 +323,36 @@ movzx eax, (coord ptr coords).Y     ;//move the value of y into eax - this is th
 mul nCols                           ;//multiply eax by nCols - the length of each row - this moves the array index to the first column of the row specified in eax
 
 add ecx, eax                        ;//add the value of eax to ecx - this moves the index to the column specified in ecx for row eax
-movzx ebx, [levelBuffer + 1 * ecx   ];//get the value located at the index calculated in ecx
+movzx ebx, [levelBuffer + 1 * ecx]  ;//get the value located at the index calculated in ecx
+
 ret
 GetValueFromMatrix ENDP
+
+;//------------------------------------------------------------------------------
+SetValueToMatrix PROC USES eax ecx,
+matrix: PTR BYTE, coords : COORD, nRows : byte, nCols : byte, value : byte
+        ;//
+;// Description: sets a value to the map array at the specified location
+;// Uses: eax, ecx
+;// Receives: a Pointer to COORDs, nRows, NCols and, the value to set
+;// Returns: Nothing
+;//------------------------------------------------------------------------------
+.code
+;//clean registers
+xor eax, eax;
+xor ecx, ecx;
+
+movzx ecx, (coord ptr coords).X     ;//move the value of x into ecx - this is the column in the matrix
+movzx eax, (coord ptr coords).Y     ;//move the value of y into eax - this is the row in the matrix
+mul nCols                           ;//multiply eax by nCols - the length of each row - this moves the array index to the first column of the row specified in eax
+add ecx, eax                        ;//add the value of eax to ecx - this moves the index to the column specified in ecx for row eax
+xor eax, eax                        ;//clean the eax register for use
+mov al, value                       ;// set the value of value to the al register
+mov levelBuffer[ecx], al            ;//set the value of the al register to the location pointed to by ecx in the level buffer
+
+ret
+SetValueToMatrix ENDP
+
 
 ;//------------------------------------------------------------------------------
 MainGameLoop PROC USES eax
@@ -347,7 +367,14 @@ MainGameLoop PROC USES eax
 .code
 ;// TODO(Nathan): Need to default COORS for current and future player POS for each new game
 
-call PrintMaze;//print the maze to the screen
+;//Set player positions before starting game
+mov CurrentPOS.X, 0
+mov CurrentPOS.Y, 1
+mov FuturePOS.X, 0
+mov FuturePOS.Y, 1
+
+call PrintMaze                                      ;//print the maze to the screen
+call GenerateScorePickups                           ;//setup score pickups
 
 ;//set default values for timer
 mov timeElapsed, 0
@@ -378,7 +405,7 @@ jz GameOver                                         ;//jump to gameover
 
 jmp GameLoop                                        ;//if the gamestate isn't 1 or the time remaining jump to the top of the loop.
 
-GameOver :
+GameOver:
 call Clrscr                                         ;//clear the screen
 mWrite "Game Over, you ran out of time", 13, 10, 0  ;//print the game over message
 call Crlf                                           ;//print a new line
@@ -405,24 +432,21 @@ UpdateTimer proc USES eax ebx edx
 ;// Returns: Nothing
 ;//------------------------------------------------------------------------------
 
-mov eax, timeElapsed                                            ;//move the value of timeElapsed into eax
-mov timePrev, eax                                               ;//save this value into timePrev
+mov eax, timeElapsed                                        ;//move the value of timeElapsed into eax
+mov timePrev, eax                                           ;//save this value into timePrev
 
-call GetMSeconds                                                ;//get the current milliseconds
-sub eax, timeStart                                              ;//subtract the value of timeStart from eax
-mov edx, 0                                                      ;//clean edx
-mov ebx, 1000                                                   ;//set ebx to 1000 milliseconds or 1 second
-div ebx                                                         ;//divide edx by ebx
+call GetMSeconds                                            ;//get the current milliseconds
+sub eax, timeStart                                          ;//subtract the value of timeStart from eax
+mov edx, 0                                                  ;//clean edx
+mov ebx, 1000                                               ;//set ebx to 1000 milliseconds or 1 second
+div ebx                                                     ;//divide edx by ebx
 
-mov timeElapsed, eax                                            ;//set the value of eax to timeElapsed; this is now in seconds
+mov timeElapsed, eax                                        ;//set the value of eax to timeElapsed; this is now in seconds
+mov ebx, maxTime                                            ;//move the value of maxTime to ebx
+sub ebx, timeElapsed                                        ;//subtract the timeElapsed from ebx
+mov timeRemaining, ebx                                      ;//move the value of ebx to timeRemaining
 
-mov ebx, maxTime                                                ;//move the value of maxTime to ebx
-
-sub ebx, timeElapsed                                            ;//subtract the timeElapsed from ebx
-
-mov timeRemaining, ebx                                          ;//move the value of ebx to timeRemaining
-
-mPrintAtLocation msgtiming, TimerPOS, white, timeRemaining      ;//print the value of timeRemaining to the location specified in TimerPOS
+mPrintAtLocation msgtiming, TimerPOS, white, timeRemaining  ;//print the value of timeRemaining to the location specified in TimerPOS
 ret
 UpdateTimer endp
 
@@ -450,39 +474,41 @@ mov keyPress, al                                    ;//move the value of al (key
 
 .IF(keyPress == "s")
 inc FuturePOS.Y                                     ;//if the key Pressed is s then increment the y position in futurePOS (move down)
-.ELSEIF(keyPress == "w")
+.ELSEIF(keyPress == "w")                            
 dec FuturePOS.Y                                     ;//if the key Pressed is w then decrement the y position in futurePOS (move up)
-.ELSEIF(keyPress == "d")
+.ELSEIF(keyPress == "d")                            
 inc FuturePOS.X                                     ;//if the key Pressed is d then increment the x position in futurePOS (move right)
-.ELSEIF(keyPress == "a")
+.ELSEIF(keyPress == "a")                            
 dec FuturePOS.X                                     ;//if the key Pressed is a then increment the y position in futurePOS (move right)
 .ENDIF
 
 xor ebx, ebx                                        ;//clean the ebx register
-invoke GetValueFromMatrix, addr levelBuffer, FuturePOS, mapHeight, mapWidth;//get the value in the levelBuffer at the FuturePOS
+
+;//get the value in the levelBuffer at the FuturePOS
+invoke GetValueFromMatrix, addr levelBuffer, FuturePOS, mapHeight, mapWidth
 
 ;//http://www.ascii-code.com/
 ;//Check if Move is valid
 .IF(ebx != 0 && ebx != 13 && ebx != 12 && ebx != 43 && ebx != 45 && ebx != 124 && keyPress != 1);
+
+;//set char at position in map array to space as well;
+invoke SetValueToMatrix, addr levelBuffer, CurrentPOS, mapHeight, mapWidth, " "
 
 call UpdatePlayerLocation                           ;//update the player location on the map
 
 .IF(ebx == 126)
 mov ebx, 1                                          ;//set the gamestate to 1
 jmp Quit                                            ;//jump to quit
-.ELSEIF(ebx == 42);// 157)
+.ELSEIF(ebx == 157)
 add score, 15                                       ;//add 15 to the score
 .ELSEIF(ebx == 234)
 add score, 10                                       ;//add 10 to the score
 .ENDIF
 
 mPrintAtLocation msgScore, ScorePOS, white, score   ;//print the score to the position specified in ScorePOS
-
 .ElSE
 mCopyCOORD FuturePOS, CurrentPOS                    ;//reset the futurePOS to the currentPOS 
-
 .ENDIF
-
 mov ebx, 0                                          ;//set the value of ebx to 0
 
 Quit:
@@ -551,42 +577,44 @@ SaveScore PROC USES edx ecx eax ebx
 .data
 scoreSaveFileHandle Handle ?
 stringLength dword ?
-stringNewLine byte 13,10
+stringNewLine byte 13, 10
 .code
 
-mov cursorInfo.bVisible, TRUE                                   ;//set the cursor visible so the user can see what they type
-INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo     ;//set the cursor info struct to the console
+mov cursorInfo.bVisible, TRUE           ;//set the cursor visible so the user can see what they type
 
-call Clrscr                                                     ;//clear the screen
+;//set the cursor info struct to the console
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
-mWrite "Congratulations on wining!"                             ;//print the win message to the screen
-call Crlf                                                       ;//print an new line
-mWrite "score: "                                                ;//print score leader text to the screen
+call Clrscr                             ;//clear the screen
 
-xor eax, eax                                                    ;//clean the eax register
-mov eax, score                                                  ;//move the value of score to eax
-call WriteInt                                                   ;//write the value of eax to the screen
+mWrite "Congratulations on wining!"     ;//print the win message to the screen
+call Crlf                               ;//print an new line
+mWrite "score: "                        ;//print score leader text to the screen
 
-call Crlf                                                       ;//write a new line
-mWrite "Time Remaining: "                                       ;//write the time remaining message to the screen
+xor eax, eax                            ;//clean the eax register
+mov eax, score                          ;//move the value of score to eax
+call WriteInt                           ;//write the value of eax to the screen
 
-xor eax, eax                                                    ;//clean the eax register
-mov eax, timeRemaining                                          ;//move the time Remaining to the eax 
-call WriteInt                                                   ;//write the value of eax to the screen
-call Crlf                                                       ;//print a new line to the screen
+call Crlf                               ;//write a new line
+mWrite "Time Remaining: "               ;//write the time remaining message to the screen
+
+xor eax, eax                            ;//clean the eax register
+mov eax, timeRemaining                  ;//move the time Remaining to the eax 
+call WriteInt                           ;//write the value of eax to the screen
+call Crlf                               ;//print a new line to the screen
 
 ;//Get user input
-mWrite "Please Enter a Name: "                                  ;//print name prompt to the screen
-mov ecx, BUFFER_SIZE                                            ;//get the buffer size
-mov edx, OFFSET fileBuffer                                      ;//move the address of fileBuffer to edx
-call ReadString                                                 ;//get input from keyboard
-mov stringLength, eax                                           ;//move the length of that input to stringLength
+mWrite "Please Enter a Name: "          ;//print name prompt to the screen
+mov ecx, BUFFER_SIZE                    ;//get the buffer size
+mov edx, OFFSET fileBuffer              ;//move the address of fileBuffer to edx
+call ReadString                         ;//get input from keyboard
+mov stringLength, eax                   ;//move the length of that input to stringLength
 
 ;// open score file for writing 
 ;// Note:(Nathan) : Had to do it this way as existing library doesn't allow for appending of file
 INVOKE CreateFile, ADDR scoreFileName, GENERIC_WRITE, DO_NOT_SHARE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0
 
-mov scoreSaveFileHandle, eax                                    ;//move the file handle to scoreSaveFileHandle
+mov scoreSaveFileHandle, eax            ;//move the file handle to scoreSaveFileHandle
 
 ;//check if the file was opened successfully
 .IF(eax == INVALID_HANDLE_VALUE)
@@ -594,17 +622,18 @@ call Crlf
 mWrite "ERROR: cannot open scores.dat file"
 call Crlf
 call WaitMsg
-jmp Quit                                                        ;//exit the save function
+jmp Quit                                ;//exit the save function
 .ENDIF
 
-invoke SetFilePointer, scoreSaveFileHandle, 0, 0, FILE_END      ;//move the file pointer to the end of the file
+;//move the file pointer to the end of the file
+invoke SetFilePointer, scoreSaveFileHandle, 0, 0, FILE_END
 
-push stringLength;//save the value of stringLength for use later because its going to be overwritten
+push stringLength                       ;//save the value of stringLength for use later because its going to be overwritten
 
 ;//Write New Line Chars so that each entry is on it's own line
 INVOKE WriteFile, scoreSaveFileHandle, addr stringNewLine, lengthof stringNewLine, addr stringLength, 0
 
-pop stringLength                                                ;//restore the value of stringLength
+pop stringLength;//restore the value of stringLength
 
 ;//write user input into file
 INVOKE WriteFile, scoreSaveFileHandle, addr fileBuffer, stringLength, addr stringLength, 0
@@ -614,10 +643,10 @@ INVOKE WriteFile, scoreSaveFileHandle, addr fileBuffer, stringLength, addr strin
 xor eax, eax
 xor edx, edx
 
-mov eax, score                                                  ;//move the value of score to eax
-call IntToString                                                ;//convert the value in eax to a string
+mov eax, score                          ;//move the value of score to eax
+call IntToString                        ;//convert the value in eax to a string
 
-INVOKE Str_length, edx                                          ;//get the length of the string
+INVOKE Str_length, edx                  ;//get the length of the string
 
 ;//write the value of edx (score) to the file 
 INVOKE WriteFile, scoreSaveFileHandle, edx, eax, addr stringLength, 0
@@ -627,10 +656,10 @@ INVOKE WriteFile, scoreSaveFileHandle, edx, eax, addr stringLength, 0
 xor eax, eax
 xor edx, edx
 
-mov eax, timeRemaining                                          ;//move the value of timeRemaining to eax
-call IntToString                                                ;//convert the value of eax to a string
+mov eax, timeRemaining                  ;//move the value of timeRemaining to eax
+call IntToString                        ;//convert the value of eax to a string
 
-INVOKE Str_length, edx                                          ;//get the length of the screen
+INVOKE Str_length, edx                  ;//get the length of the screen
 
 ;//write the value of edx (time remaining) to the file
 INVOKE WriteFile, sCoreSaveFileHandle, edx, eax, addr stringLength, 0
@@ -638,8 +667,10 @@ INVOKE WriteFile, sCoreSaveFileHandle, edx, eax, addr stringLength, 0
 ;//close the file
 INVOKE CloseHandle, scoreSaveFileHandle
 
-mov cursorInfo.bVisible, FALSE                                  ;//set the cursor invisible 
-INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo     ;//write the cursor info struct the the console
+mov cursorInfo.bVisible, FALSE          ;//set the cursor invisible 
+
+;//write the cursor info struct the the console
+INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
 Quit:
 ret
@@ -653,55 +684,87 @@ IntToString PROC USES eax ecx edi ebx
 ;// Receives: A integer in EAX
 ;// Returns: a string in EDX
 ;// Remarks: Large portions of this code came from the Irvine32 Library - WriteInt
-;//         I'm not going to comment this code since I don't really know what it's doing
+;//         All comments are the original comments from the source code
 ;//------------------------------------------------------------------------------
 WI_Bufsize = 12
 true = 1
 false = 0
 .data
-buffer_B  BYTE  WI_Bufsize DUP(0), 0; buffer to hold digits
+buffer_B  BYTE  WI_Bufsize DUP(0), 0    ;// buffer to hold digits
 neg_flag  BYTE ?
 
 .code
 
-mov   neg_flag, false; assume neg_flag is false
-or    eax, eax; is AX positive ?
-jns   WIS1; yes: jump to B1
-neg   eax; no: make it positive
-mov   neg_flag, true; set neg_flag to true
+mov   neg_flag, false                   ;//assume neg_flag is false
+or    eax, eax                          ;//is AX positive ?
+jns   WIS1                              ;//yes: jump to B1
+neg   eax                               ;//no: make it positive
+mov   neg_flag, true                    ;//set neg_flag to true
 
 WIS1:
-mov   ecx, 0; digit count = 0
+mov   ecx, 0                            ;// digit count = 0
 mov   edi, OFFSET buffer_B
 add   edi, (WI_Bufsize - 1)
-mov   ebx, 10; will divide by 10
+mov   ebx, 10                           ;// will divide by 10
 
 WIS2:
-mov   edx, 0; set dividend to 0
-div   ebx; divide AX by 10
-or    dl, 30h; convert remainder to ASCII
-dec   edi; reverse through the buffer
-mov[edi], dl; store ASCII digit
-inc   ecx; increment digit count
-or    eax, eax; quotient > 0 ?
-jnz   WIS2; yes: divide again
+mov   edx, 0                            ;// set dividend to 0
+div   ebx                               ;// divide AX by 10
+or    dl, 30h                           ;// convert remainder to ASCII
+dec   edi                               ;// reverse through the buffer
+mov[edi], dl                            ;// store ASCII digit
+inc   ecx                               ;// increment digit count
+or    eax, eax                          ;// quotient > 0 ?
+jnz   WIS2                              ;// yes: divide again
 
-; Insert the sign.
+;// Insert the sign.
 
-dec   edi; back up in the buffer
-inc   ecx; increment counter
-mov   BYTE PTR[edi], ' '; insert plus sign
-cmp   neg_flag, false; was the number positive ?
-jz    WIS3; yes
-mov   BYTE PTR[edi], ' '; no: insert negative sign
+dec   edi                               ;// back up in the buffer
+inc   ecx                               ;// increment counter
+mov   BYTE PTR[edi], ' '                ;// insert a space because I wanted to (nathan)
+cmp   neg_flag, false                   ;// was the number positive ?
+jz    WIS3;// yes
+mov   BYTE PTR[edi], ' '                ;// no: insert a space because I wanted to (nathan)
 
-WIS3 : ; Display the number
-       mov  edx, edi       
-       ret
+WIS3:
+mov  edx, edi
+ret
 IntToString ENDP
 
+       ;//------------------------------------------------------------------------------
+GenerateRandomPoint PROC USES eax edx
+;//
+;// Description: generate a random point
+;// Uses: eax, edx, ecx
+;// Receives: Nothing
+;// Returns: Nothing
+;// Remarks: this might end up as a macro for easer calling.
 ;//------------------------------------------------------------------------------
-GenerateScorePickups PROC
+;//clean registers
+xor eax, eax
+xor edx, edx
+
+;//gen X-axis
+movzx eax, mapWidth                     ;//set the max number that can be return by RandomRange to the Map width
+call RandomRange                        ;//return a number between 0 and eax-1
+movzx dx, al                            ;//move the value returned by RandomRange to the dx register
+mov MarkerPOS.X, dx                     ;//move the value of the dx register to the x position
+
+;//gen y-Axis
+;//clean registers
+xor eax, eax
+xor edx, edx
+
+movzx eax, mapHeight                    ;//set the max number that can be return by RandomRange to the Map width
+call RandomRange                        ;//return a number between 0 and eax-1
+movzx dx, al                            ;//move the value returned by RandomRange to the dx register
+mov MarkerPOS.y, dx                     ;//move the value of the dx register to the x position
+
+ret
+GenerateRandomPoint ENDP
+
+;//------------------------------------------------------------------------------
+GenerateScorePickups PROC USES eax edx ecx
 ;//
 ;// Description: will randomly place score pickups on the map
 ;// Uses: Nothing
@@ -710,6 +773,80 @@ GenerateScorePickups PROC
 ;// Remarks: this might end up as a macro for easer calling.
 ;//------------------------------------------------------------------------------
 
+.data
+numHighPoints dword 6
+numLowPoints dword 6
+
+highPointChar byte 157
+lowPointChar byte 234
+
+.code
+call Randomize              ;//init the randomizer
+GenHighPoint:
+xor ecx, ecx                ;//clean the ecx register
+mov ecx, numHighPoints      ;//set the ecx (loop counter) to the number of high point chars to generate
+
+;//Gen high point pickups
+L1:
+RetryX :
+call GenerateRandomPoint    ;//get a random point
+
+xor ebx, ebx                ;//clean the ebx register
+
+;//get the value in the levelBuffer at the FuturePOS
+invoke GetValueFromMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth
+
+.IF(ebx == 32);
+;//set the car at the generated position to ascii ùto 157
+invoke SetValueToMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth, 157
+
+push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
+
+;//move the cursor to the position specified in CurrentPOS
+INVOKE SetConsoleCursorPosition, consoleHandle, MarkerPOS
+
+mov al, highPointChar       ;//move a empty space to the al register
+call WriteChar              ;//write a blank char so to erase the previous player marker
+
+pop ecx                     ;//restore the ecx register
+loop L1
+jmp GenerateLowPoint
+.ENDIF
+
+jmp RetryX
+
+GenerateLowPoint :
+xor ecx, ecx                ;//clean the ecx register
+mov ecx, numLowPoints       ;//set the ecx (loop counter) to the number of low point chars to generate
+
+;//Gen high point pickups
+L2:
+RetryY :
+call GenerateRandomPoint    ;//get a random point
+
+xor ebx, ebx                ;//clean the ebx register
+
+;//get the value in the levelBuffer at the FuturePOS
+invoke GetValueFromMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth
+
+.IF(ebx == 32);
+;//set the car at the generated position to ascii ùto 234
+invoke SetValueToMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth, 234
+push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
+
+;//move the cursor to the position specified in CurrentPOS
+INVOKE SetConsoleCursorPosition, consoleHandle, MarkerPOS
+mov al, lowPointChar        ;//move a empty space to the al register
+call WriteChar              ;//write a blank char so to erase the previous player marker
+
+pop ecx                     ;//restore the ecx register
+loop L2
+jmp Quit
+.ENDIF
+
+jmp RetryY
+
+Quit :
 ret
 GenerateScorePickups ENDP
 
@@ -732,6 +869,7 @@ call WriteChar                                              ;//write a blank cha
 mCopyCOORD CurrentPOS, FuturePOS                            ;//copy the futurePOS to the currentPOS
 
 INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS  ;//move the cursor to the position specified in CurrentPOS
+mov al, 0DBh                                                ;//move the weird box thing to the al register
 mov al, 0DBh                                                ;//move the weird box thing to the al register
 call WriteChar                                              ;//draw the player char
 
