@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    10/02/15 20:20:48
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    10/04/15 11:34:11
 main.asm						     Page 1 - 1
 
 
@@ -202,7 +202,7 @@ main.asm(12) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 
  00000077			MainScreen:
  00000077  33 C0		xor eax, eax
- 00000079  E8 00000574		call MenuScreen;//show the main Menu
+ 00000079  E8 0000056A		call MenuScreen;//show the main Menu
 
  0000007E  66| 83 F8 01		cmp ax, 1                                                       ;//if the player choice is 1 jump to startGame
  00000082  74 1B		jz StartGame
@@ -225,7 +225,7 @@ main.asm(12) : warning A4011:multiple .MODEL directives found : .MODEL ignored
  000000A4  EB D1		jmp MainScreen                                                  ;//jump to main menu
 
  000000A6			ShowScore:
- 000000A6  E8 00000567		call ScoreScreen                                                ;//show the Score Screen
+ 000000A6  E8 0000055D		call ScoreScreen                                                ;//show the Score Screen
  000000AB  EB CA		jmp MainScreen                                                  ;//jump to Main Menu
 
 				;//Clean up Before Exit
@@ -376,8 +376,6 @@ main.asm(12) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				ret
  00000209			GetValueFromMatrix ENDP
 main.asm(329) : warning A6004:procedure argument or local not referenced : matrix
-main.asm(329) : warning A6004:procedure argument or local not referenced : nRows
-main.asm(329) : warning A6004:procedure argument or local not referenced : baseAddress
 
 				;//------------------------------------------------------------------------------
  00000209			SetValueToMatrix PROC USES eax ecx,
@@ -404,7 +402,6 @@ main.asm(329) : warning A6004:procedure argument or local not referenced : baseA
 				ret
  00000230			SetValueToMatrix ENDP
 main.asm(354) : warning A6004:procedure argument or local not referenced : matrix
-main.asm(354) : warning A6004:procedure argument or local not referenced : nRows
 
 
 				;//------------------------------------------------------------------------------
@@ -435,7 +432,7 @@ main.asm(354) : warning A6004:procedure argument or local not referenced : nRows
 	   0001
 
  00000255  E8 FFFFFEC8		call PrintMaze                                      ;//print the maze to the screen
- 0000025A  E8 0000060A		call GenerateScorePickups                           ;//setup score pickups
+ 0000025A  E8 00000600		call GenerateScorePickups                           ;//setup score pickups
 
 				;//set default values for timer
  0000025F  C7 05 00000047 R	mov timeElapsed, 0
@@ -446,19 +443,21 @@ main.asm(354) : warning A6004:procedure argument or local not referenced : nRows
 	   00000000
  0000027D  C7 05 0000004F R	mov maxTime, 60                                     ;//time limit is 60 seconds
 	   0000003C
- 00000287  C7 05 0000004B R	mov timeRemaining, 60                               ;//time limit is 60 seconds
-	   0000003C
- 00000291  E8 00000000 E	call GetMSeconds                                    ;//get the current milliseconds
- 00000296  A3 0000003F R	mov timeStart, eax                                  ;//move the current milliseconds to timeStart
+				mov timeRemaining, maxTime                               ;//time limit is 60 seconds
+main.asm(384) : error A2070:invalid instruction operands
+main.asm(384) : warning A6004:procedure argument or local not referenced : nRows
+main.asm(384) : warning A6004:procedure argument or local not referenced : baseAddress
+ 00000287  E8 00000000 E	call GetMSeconds                                    ;//get the current milliseconds
+ 0000028C  A3 0000003F R	mov timeStart, eax                                  ;//move the current milliseconds to timeStart
 
 				;//Draw starting information on screen before entering game loop
 
 				mPrintAtLocation msgScore, ScorePOS, white, score   ;//print the score to the location specified in ScorePOS
  0000279D		     1	.data
  0000279D 00000000	     1	??0000 DWORD ?
- 0000029B		     1	.code
- 0000029B  50		     1	push eax
- 0000029C  52		     1	push edx
+ 00000291		     1	.code
+ 00000291  50		     1	push eax
+ 00000292  52		     1	push edx
 			     2	;
 main.asm(390) : warning A4006:too many arguments in macro call
  mWrite(1): Macro Called From
@@ -475,30 +474,30 @@ main.asm(390) : warning A4006:too many arguments in macro call
 	   20 20 20 20 20
 	   20 20 20 20 20
 	   00
- 000002AE		     2		.code
- 000002AE  52		     2		push	edx
- 000002AF  BA 000027A1 R     2		mov	edx,OFFSET ??0001
- 000002B4  E8 00000000 E     2		call	WriteString
- 000002B9  5A		     2		pop	edx
- 000002CB  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
- 000002D0  A3 0000279D R     1	mov ??0000, eax                                   ;//save the current color data into currentTextColor;
- 000002D5  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
- 000002DA  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
- 000002DF  BA 00000053 R     1	mov edx, offset msgScore                                     ;//move the address of the message into edx register
- 000002E4  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
- 000002E9  33 C0	     1	xor eax, eax                                                ;//clean the eax register
- 000002EB  A1 0000005B R     1	mov eax, score                                   ;//move the optionalIntValue to the eax register
- 000002F0  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
- 000002F5  A1 0000279D R     1	mov eax, ??0000                                   ;//move the text color stored in currentTextColor to eax
- 000002FA  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
- 000002FF  5A		     1	pop edx
- 00000300  58		     1	pop eax
+ 000002A4		     2		.code
+ 000002A4  52		     2		push	edx
+ 000002A5  BA 000027A1 R     2		mov	edx,OFFSET ??0001
+ 000002AA  E8 00000000 E     2		call	WriteString
+ 000002AF  5A		     2		pop	edx
+ 000002C1  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
+ 000002C6  A3 0000279D R     1	mov ??0000, eax                                   ;//save the current color data into currentTextColor;
+ 000002CB  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
+ 000002D0  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
+ 000002D5  BA 00000053 R     1	mov edx, offset msgScore                                     ;//move the address of the message into edx register
+ 000002DA  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
+ 000002DF  33 C0	     1	xor eax, eax                                                ;//clean the eax register
+ 000002E1  A1 0000005B R     1	mov eax, score                                   ;//move the optionalIntValue to the eax register
+ 000002E6  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
+ 000002EB  A1 0000279D R     1	mov eax, ??0000                                   ;//move the text color stored in currentTextColor to eax
+ 000002F0  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
+ 000002F5  5A		     1	pop edx
+ 000002F6  58		     1	pop eax
 				mPrintAtLocation msgTiming, TimerPOS, white         ;//print the time remaining to the location specified in TimerPOS
  000027CF		     1	.data
  000027CF 00000000	     1	??0002 DWORD ?
- 00000301		     1	.code
- 00000301  50		     1	push eax
- 00000302  52		     1	push edx
+ 000002F7		     1	.code
+ 000002F7  50		     1	push eax
+ 000002F8  52		     1	push edx
 			     2	;
 main.asm(391) : warning A4006:too many arguments in macro call
  mWrite(1): Macro Called From
@@ -515,40 +514,40 @@ main.asm(391) : warning A4006:too many arguments in macro call
 	   20 20 20 20 20
 	   20 20 20 20 20
 	   00
- 00000314		     2		.code
- 00000314  52		     2		push	edx
- 00000315  BA 000027D3 R     2		mov	edx,OFFSET ??0003
- 0000031A  E8 00000000 E     2		call	WriteString
- 0000031F  5A		     2		pop	edx
- 00000331  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
- 00000336  A3 000027CF R     1	mov ??0002, eax                                   ;//save the current color data into currentTextColor;
- 0000033B  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
- 00000340  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
- 00000345  BA 0000002E R     1	mov edx, offset msgTiming                                     ;//move the address of the message into edx register
- 0000034A  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
- 0000034F  A1 000027CF R     1	mov eax, ??0002                                   ;//move the text color stored in currentTextColor to eax
- 00000354  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
- 00000359  5A		     1	pop edx
- 0000035A  58		     1	pop eax
+ 0000030A		     2		.code
+ 0000030A  52		     2		push	edx
+ 0000030B  BA 000027D3 R     2		mov	edx,OFFSET ??0003
+ 00000310  E8 00000000 E     2		call	WriteString
+ 00000315  5A		     2		pop	edx
+ 00000327  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
+ 0000032C  A3 000027CF R     1	mov ??0002, eax                                   ;//save the current color data into currentTextColor;
+ 00000331  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
+ 00000336  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
+ 0000033B  BA 0000002E R     1	mov edx, offset msgTiming                                     ;//move the address of the message into edx register
+ 00000340  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
+ 00000345  A1 000027CF R     1	mov eax, ??0002                                   ;//move the text color stored in currentTextColor to eax
+ 0000034A  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
+ 0000034F  5A		     1	pop edx
+ 00000350  58		     1	pop eax
 
- 0000035B  E8 000005FD		call UpdatePlayerLocation                           ;//update the player's location on the map
+ 00000351  E8 000005FD		call UpdatePlayerLocation                           ;//update the player's location on the map
 
- 00000360			GameLoop:
- 00000360  33 DB		xor ebx, ebx                                        ;//clean the ebx register
- 00000362  E8 000000EF		call GetPlayerInput                                 ;// get the player input and update gamestate
+ 00000356			GameLoop:
+ 00000356  33 DB		xor ebx, ebx                                        ;//clean the ebx register
+ 00000358  E8 000000EF		call GetPlayerInput                                 ;// get the player input and update gamestate
 
- 00000367  83 FB 01		cmp ebx, 1                                          ;//if the gamestate stored in ebx is 1 then the game ended in victory
- 0000036A  74 2D		jz Win                                              ;//jump to Win
+ 0000035D  83 FB 01		cmp ebx, 1                                          ;//if the gamestate stored in ebx is 1 then the game ended in victory
+ 00000360  74 2D		jz Win                                              ;//jump to Win
 
- 0000036C  E8 00000040		call UpdateTimer                                    ;//update the game timer
- 00000371  83 3D 0000004B R	cmp timeRemaining, 0                                ;//check if there is time remaining; if there isn't then set flag to 0
+ 00000362  E8 00000040		call UpdateTimer                                    ;//update the game timer
+ 00000367  83 3D 0000004B R	cmp timeRemaining, 0                                ;//check if there is time remaining; if there isn't then set flag to 0
 	   00
- 00000378  74 02		jz GameOver                                         ;//jump to gameover
+ 0000036E  74 02		jz GameOver                                         ;//jump to gameover
 
- 0000037A  EB E4		jmp GameLoop                                        ;//if the gamestate isn't 1 or the time remaining jump to the top of the loop.
+ 00000370  EB E4		jmp GameLoop                                        ;//if the gamestate isn't 1 or the time remaining jump to the top of the loop.
 
- 0000037C			GameOver:
- 0000037C  E8 00000000 E	call Clrscr                                         ;//clear the screen
+ 00000372			GameOver:
+ 00000372  E8 00000000 E	call Clrscr                                         ;//clear the screen
 				mWrite "Game Over, you ran out of time", 13, 10, 0  ;//print the game over message
 			     1	;
 main.asm(410) : warning A4006:too many arguments in macro call
@@ -562,28 +561,28 @@ main.asm(410) : warning A4006:too many arguments in macro call
 	   75 74 20 6F 66
 	   20 74 69 6D 65
 	   00
- 00000381		     1		.code
- 00000381  52		     1		push	edx
- 00000382  BA 00002801 R     1		mov	edx,OFFSET ??0004
- 00000387  E8 00000000 E     1		call	WriteString
- 0000038C  5A		     1		pop	edx
- 0000038D  E8 00000000 E	call Crlf                                           ;//print a new line
- 00000392  E8 00000000 E	call WaitMsg                                        ;//print wait message
- 00000397  EB 16		jmp quit                                            ;//jump to quit
+ 00000377		     1		.code
+ 00000377  52		     1		push	edx
+ 00000378  BA 00002801 R     1		mov	edx,OFFSET ??0004
+ 0000037D  E8 00000000 E     1		call	WriteString
+ 00000382  5A		     1		pop	edx
+ 00000383  E8 00000000 E	call Crlf                                           ;//print a new line
+ 00000388  E8 00000000 E	call WaitMsg                                        ;//print wait message
+ 0000038D  EB 16		jmp quit                                            ;//jump to quit
 
- 00000399			Win:
- 00000399  E8 00000000 E	call Clrscr                                         ;//clear the screen
- 0000039E  E8 00000296		call SaveScore                                      ;//prompt the player to save score 
- 000003A3  E8 00000000 E	call Crlf                                           ;//print new line
- 000003A8  E8 00000000 E	call WaitMsg                                        ;//print wait message
- 000003AD  EB 00		jmp quit                                            ;//jump to quit
+ 0000038F			Win:
+ 0000038F  E8 00000000 E	call Clrscr                                         ;//clear the screen
+ 00000394  E8 00000296		call SaveScore                                      ;//prompt the player to save score 
+ 00000399  E8 00000000 E	call Crlf                                           ;//print new line
+ 0000039E  E8 00000000 E	call WaitMsg                                        ;//print wait message
+ 000003A3  EB 00		jmp quit                                            ;//jump to quit
 
- 000003AF			quit:
+ 000003A5			quit:
 				ret
- 000003B1			MainGameLoop ENDP
+ 000003A7			MainGameLoop ENDP
 
 				;//------------------------------------------------------------------------------
- 000003B1			UpdateTimer proc USES eax ebx edx
+ 000003A7			UpdateTimer proc USES eax ebx edx
 				;//
 				;// Description: Updates the Timer in game
 				;// Uses: eax ebx edx
@@ -591,26 +590,26 @@ main.asm(410) : warning A4006:too many arguments in macro call
 				;// Returns: Nothing
 				;//------------------------------------------------------------------------------
 
- 000003B4  A1 00000047 R	mov eax, timeElapsed                                        ;//move the value of timeElapsed into eax
- 000003B9  A3 00000043 R	mov timePrev, eax                                           ;//save this value into timePrev
+ 000003AA  A1 00000047 R	mov eax, timeElapsed                                        ;//move the value of timeElapsed into eax
+ 000003AF  A3 00000043 R	mov timePrev, eax                                           ;//save this value into timePrev
 
- 000003BE  E8 00000000 E	call GetMSeconds                                            ;//get the current milliseconds
- 000003C3  2B 05 0000003F R	sub eax, timeStart                                          ;//subtract the value of timeStart from eax
- 000003C9  BA 00000000		mov edx, 0                                                  ;//clean edx
- 000003CE  BB 000003E8		mov ebx, 1000                                               ;//set ebx to 1000 milliseconds or 1 second
- 000003D3  F7 F3		div ebx                                                     ;//divide edx by ebx
+ 000003B4  E8 00000000 E	call GetMSeconds                                            ;//get the current milliseconds
+ 000003B9  2B 05 0000003F R	sub eax, timeStart                                          ;//subtract the value of timeStart from eax
+ 000003BF  BA 00000000		mov edx, 0                                                  ;//clean edx
+ 000003C4  BB 000003E8		mov ebx, 1000                                               ;//set ebx to 1000 milliseconds or 1 second
+ 000003C9  F7 F3		div ebx                                                     ;//divide edx by ebx
 
- 000003D5  A3 00000047 R	mov timeElapsed, eax                                        ;//set the value of eax to timeElapsed; this is now in seconds
- 000003DA  8B 1D 0000004F R	mov ebx, maxTime                                            ;//move the value of maxTime to ebx
- 000003E0  2B 1D 00000047 R	sub ebx, timeElapsed                                        ;//subtract the timeElapsed from ebx
- 000003E6  89 1D 0000004B R	mov timeRemaining, ebx                                      ;//move the value of ebx to timeRemaining
+ 000003CB  A3 00000047 R	mov timeElapsed, eax                                        ;//set the value of eax to timeElapsed; this is now in seconds
+ 000003D0  8B 1D 0000004F R	mov ebx, maxTime                                            ;//move the value of maxTime to ebx
+ 000003D6  2B 1D 00000047 R	sub ebx, timeElapsed                                        ;//subtract the timeElapsed from ebx
+ 000003DC  89 1D 0000004B R	mov timeRemaining, ebx                                      ;//move the value of ebx to timeRemaining
 
 				mPrintAtLocation msgtiming, TimerPOS, white, timeRemaining  ;//print the value of timeRemaining to the location specified in TimerPOS
  00002820		     1	.data
  00002820 00000000	     1	??0005 DWORD ?
- 000003EC		     1	.code
- 000003EC  50		     1	push eax
- 000003ED  52		     1	push edx
+ 000003E2		     1	.code
+ 000003E2  50		     1	push eax
+ 000003E3  52		     1	push edx
 			     2	;
 main.asm(449) : warning A4006:too many arguments in macro call
  mWrite(1): Macro Called From
@@ -627,29 +626,29 @@ main.asm(449) : warning A4006:too many arguments in macro call
 	   20 20 20 20 20
 	   20 20 20 20 20
 	   00
- 000003FF		     2		.code
- 000003FF  52		     2		push	edx
- 00000400  BA 00002824 R     2		mov	edx,OFFSET ??0006
- 00000405  E8 00000000 E     2		call	WriteString
- 0000040A  5A		     2		pop	edx
- 0000041C  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
- 00000421  A3 00002820 R     1	mov ??0005, eax                                   ;//save the current color data into currentTextColor;
- 00000426  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
- 0000042B  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
- 00000430  BA 0000002E R     1	mov edx, offset msgtiming                                     ;//move the address of the message into edx register
- 00000435  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
- 0000043A  33 C0	     1	xor eax, eax                                                ;//clean the eax register
- 0000043C  A1 0000004B R     1	mov eax, timeRemaining                                   ;//move the optionalIntValue to the eax register
- 00000441  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
- 00000446  A1 00002820 R     1	mov eax, ??0005                                   ;//move the text color stored in currentTextColor to eax
- 0000044B  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
- 00000450  5A		     1	pop edx
- 00000451  58		     1	pop eax
+ 000003F5		     2		.code
+ 000003F5  52		     2		push	edx
+ 000003F6  BA 00002824 R     2		mov	edx,OFFSET ??0006
+ 000003FB  E8 00000000 E     2		call	WriteString
+ 00000400  5A		     2		pop	edx
+ 00000412  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
+ 00000417  A3 00002820 R     1	mov ??0005, eax                                   ;//save the current color data into currentTextColor;
+ 0000041C  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
+ 00000421  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
+ 00000426  BA 0000002E R     1	mov edx, offset msgtiming                                     ;//move the address of the message into edx register
+ 0000042B  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
+ 00000430  33 C0	     1	xor eax, eax                                                ;//clean the eax register
+ 00000432  A1 0000004B R     1	mov eax, timeRemaining                                   ;//move the optionalIntValue to the eax register
+ 00000437  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
+ 0000043C  A1 00002820 R     1	mov eax, ??0005                                   ;//move the text color stored in currentTextColor to eax
+ 00000441  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
+ 00000446  5A		     1	pop edx
+ 00000447  58		     1	pop eax
 				ret
- 00000456			UpdateTimer endp
+ 0000044C			UpdateTimer endp
 
 				;//------------------------------------------------------------------------------
- 00000456			GetPlayerInput PROC USES eax
+ 0000044C			GetPlayerInput PROC USES eax
 				LOCAL keyPress : BYTE
 				;//
 				;// Description: Gets the players Input then updates the character POS, Score and
@@ -660,31 +659,31 @@ main.asm(449) : warning A4006:too many arguments in macro call
 				;//------------------------------------------------------------------------------
  00002852			.data
 
- 0000045D			.code
- 0000045D  C6 45 FF 00		mov keyPress, 0                                     ;// clean the variable keyPress
+ 00000453			.code
+ 00000453  C6 45 FF 00		mov keyPress, 0                                     ;// clean the variable keyPress
 
- 00000461  33 C0		xor eax, eax                                        ;//clean the eax register
- 00000463  B8 0000000A		mov eax, 10                                         ;//set the eax register to 10
- 00000468  E8 00000000 E	call Delay                                          ;//wait amount of time equal to the value of eax
- 0000046D  E8 00000000 E	call ReadKey                                        ;//get the current key pressed
+ 00000457  33 C0		xor eax, eax                                        ;//clean the eax register
+ 00000459  B8 0000000A		mov eax, 10                                         ;//set the eax register to 10
+ 0000045E  E8 00000000 E	call Delay                                          ;//wait amount of time equal to the value of eax
+ 00000463  E8 00000000 E	call ReadKey                                        ;//get the current key pressed
 
- 00000472  88 45 FF		mov keyPress, al                                    ;//move the value of al (key pressed) into keyPress
+ 00000468  88 45 FF		mov keyPress, al                                    ;//move the value of al (key pressed) into keyPress
 
 				.IF(keyPress == "s")
- 0000047B  66| FF 05		inc FuturePOS.Y                                     ;//if the key Pressed is s then increment the y position in futurePOS (move down)
+ 00000471  66| FF 05		inc FuturePOS.Y                                     ;//if the key Pressed is s then increment the y position in futurePOS (move down)
 	   0000001C R
 				.ELSEIF(keyPress == "w")                            
- 0000048A  66| FF 0D		dec FuturePOS.Y                                     ;//if the key Pressed is w then decrement the y position in futurePOS (move up)
+ 00000480  66| FF 0D		dec FuturePOS.Y                                     ;//if the key Pressed is w then decrement the y position in futurePOS (move up)
 	   0000001C R
 				.ELSEIF(keyPress == "d")                            
- 00000499  66| FF 05		inc FuturePOS.X                                     ;//if the key Pressed is d then increment the x position in futurePOS (move right)
+ 0000048F  66| FF 05		inc FuturePOS.X                                     ;//if the key Pressed is d then increment the x position in futurePOS (move right)
 	   0000001A R
 				.ELSEIF(keyPress == "a")                            
- 000004A8  66| FF 0D		dec FuturePOS.X                                     ;//if the key Pressed is a then increment the y position in futurePOS (move right)
+ 0000049E  66| FF 0D		dec FuturePOS.X                                     ;//if the key Pressed is a then increment the y position in futurePOS (move right)
 	   0000001A R
 				.ENDIF
 
- 000004AF  33 DB		xor ebx, ebx                                        ;//clean the ebx register
+ 000004A5  33 DB		xor ebx, ebx                                        ;//clean the ebx register
 
 				;//get the value in the levelBuffer at the FuturePOS
 				invoke GetValueFromMatrix, addr levelBuffer, FuturePOS, mapHeight, mapWidth
@@ -696,25 +695,25 @@ main.asm(449) : warning A4006:too many arguments in macro call
 				;//set char at position in map array to space as well;
 				invoke SetValueToMatrix, addr levelBuffer, CurrentPOS, mapHeight, mapWidth, " "
 
- 0000052A  E8 0000042E		call UpdatePlayerLocation                           ;//update the player location on the map
+ 00000520  E8 0000042E		call UpdatePlayerLocation                           ;//update the player location on the map
 
 				.IF(ebx == 126)
- 00000534  BB 00000001		mov ebx, 1                                          ;//set the gamestate to 1
- 00000539  E9 000000B1		jmp Quit                                            ;//jump to quit
+ 0000052A  BB 00000001		mov ebx, 1                                          ;//set the gamestate to 1
+ 0000052F  E9 000000B1		jmp Quit                                            ;//jump to quit
 				.ELSEIF(ebx == 157)
- 00000548  83 05 0000005B R	add score, 15                                       ;//add 15 to the score
+ 0000053E  83 05 0000005B R	add score, 15                                       ;//add 15 to the score
 	   0F
 				.ELSEIF(ebx == 234)
- 00000559  83 05 0000005B R	add score, 10                                       ;//add 10 to the score
+ 0000054F  83 05 0000005B R	add score, 10                                       ;//add 10 to the score
 	   0A
 				.ENDIF
 
 				mPrintAtLocation msgScore, ScorePOS, white, score   ;//print the score to the position specified in ScorePOS
- 00000560 00000560 00000560 00002852  1	.data
+ 00000556 00000556 00000556 00002852  1	.data
  00002852 00000000	     1	??0007 DWORD ?
- 00000560		     1	.code
- 00000560  50		     1	push eax
- 00000561  52		     1	push edx
+ 00000556		     1	.code
+ 00000556  50		     1	push eax
+ 00000557  52		     1	push edx
 			     2	;
 main.asm(508) : warning A4006:too many arguments in macro call
  mWrite(1): Macro Called From
@@ -731,47 +730,47 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   20 20 20 20 20
 	   20 20 20 20 20
 	   00
- 00000573		     2		.code
- 00000573  52		     2		push	edx
- 00000574  BA 00002856 R     2		mov	edx,OFFSET ??0008
- 00000579  E8 00000000 E     2		call	WriteString
- 0000057E  5A		     2		pop	edx
- 00000590  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
- 00000595  A3 00002852 R     1	mov ??0007, eax                                   ;//save the current color data into currentTextColor;
- 0000059A  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
- 0000059F  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
- 000005A4  BA 00000053 R     1	mov edx, offset msgScore                                     ;//move the address of the message into edx register
- 000005A9  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
- 000005AE  33 C0	     1	xor eax, eax                                                ;//clean the eax register
- 000005B0  A1 0000005B R     1	mov eax, score                                   ;//move the optionalIntValue to the eax register
- 000005B5  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
- 000005BA  A1 00002852 R     1	mov eax, ??0007                                   ;//move the text color stored in currentTextColor to eax
- 000005BF  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
- 000005C4  5A		     1	pop edx
- 000005C5  58		     1	pop eax
+ 00000569		     2		.code
+ 00000569  52		     2		push	edx
+ 0000056A  BA 00002856 R     2		mov	edx,OFFSET ??0008
+ 0000056F  E8 00000000 E     2		call	WriteString
+ 00000574  5A		     2		pop	edx
+ 00000586  E8 00000000 E     1	call GetTextColor                                           ;//get the current text color of the background and foreground
+ 0000058B  A3 00002852 R     1	mov ??0007, eax                                   ;//save the current color data into currentTextColor;
+ 00000590  B8 0000000F	     1	mov eax, white                                              ;//move the new color into the eax register
+ 00000595  E8 00000000 E     1	call SetTextColor                                           ;//set the new color to be used when writing to the console
+ 0000059A  BA 00000053 R     1	mov edx, offset msgScore                                     ;//move the address of the message into edx register
+ 0000059F  E8 00000000 E     1	call WriteString                                            ;//write the data stored in the edx register to the screen
+ 000005A4  33 C0	     1	xor eax, eax                                                ;//clean the eax register
+ 000005A6  A1 0000005B R     1	mov eax, score                                   ;//move the optionalIntValue to the eax register
+ 000005AB  E8 00000000 E     1	call WriteInt                                               ;//write the value of eax onto the screen
+ 000005B0  A1 00002852 R     1	mov eax, ??0007                                   ;//move the text color stored in currentTextColor to eax
+ 000005B5  E8 00000000 E     1	call SetTextColor                                           ;//set the text color to the value stored in eax
+ 000005BA  5A		     1	pop edx
+ 000005BB  58		     1	pop eax
 				.ElSE
 				mCopyCOORD FuturePOS, CurrentPOS                    ;//reset the futurePOS to the currentPOS 
- 000005C8  66| 50	     1	push ax
- 000005CA  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
- 000005CD  66| A1	     1	mov ax, (coord ptr CurrentPOS).X       ;//move the value of sourceCOORD.x to the ax register
+ 000005BE  66| 50	     1	push ax
+ 000005C0  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
+ 000005C3  66| A1	     1	mov ax, (coord ptr CurrentPOS).X       ;//move the value of sourceCOORD.x to the ax register
 	   0000001E R
- 000005D3  66| A3	     1	mov(coord ptr FuturePOS).X, ax          ;//move the value of the ax register to destCOORD.x
+ 000005C9  66| A3	     1	mov(coord ptr FuturePOS).X, ax          ;//move the value of the ax register to destCOORD.x
 	   0000001A R
- 000005D9  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
- 000005DC  66| A1	     1	mov ax, (coord ptr CurrentPOS).Y       ;//move the value of sourceCOORD.x to the ax register
+ 000005CF  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
+ 000005D2  66| A1	     1	mov ax, (coord ptr CurrentPOS).Y       ;//move the value of sourceCOORD.x to the ax register
 	   00000020 R
- 000005E2  66| A3	     1	mov(coord ptr FuturePOS).Y, ax          ;//move the value of the ax register to destCOORD.x
+ 000005D8  66| A3	     1	mov(coord ptr FuturePOS).Y, ax          ;//move the value of the ax register to destCOORD.x
 	   0000001C R
- 000005E8  66| 58	     1	pop ax
+ 000005DE  66| 58	     1	pop ax
 				.ENDIF
- 000005EA  BB 00000000		mov ebx, 0                                          ;//set the value of ebx to 0
+ 000005E0  BB 00000000		mov ebx, 0                                          ;//set the value of ebx to 0
 
- 000005EF			Quit:
+ 000005E5			Quit:
 				ret
- 000005F2			GetPlayerInput ENDP
+ 000005E8			GetPlayerInput ENDP
 
 				;//------------------------------------------------------------------------------
- 000005F2			MenuScreen PROC USES edx
+ 000005E8			MenuScreen PROC USES edx
 				;//
 				;// Description: Prints the Main Menu and Reads user input
 				;// Uses: edx
@@ -788,22 +787,22 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   3A 20 45 78 69
 	   74 0D 0A 00
 
- 000005F3			.code
+ 000005E9			.code
 				;//clean the registers
- 000005F3  33 C0		xor eax, eax
- 000005F5  33 D2		xor edx, edx
+ 000005E9  33 C0		xor eax, eax
+ 000005EB  33 D2		xor edx, edx
 
- 000005F7  E8 00000000 E	call Clrscr                 ;//clear the screen
- 000005FC  BA 00002884 R	mov edx, OFFSET msgMenu     ;//move the address of msgMenu to edx
- 00000601  E8 00000000 E	call WriteString            ;//write the value stored in edx to the console
- 00000606  E8 00000000 E	call Crlf                   ;//write a new line
- 0000060B  E8 00000000 E	call readInt                ;//read input from keyboard
+ 000005ED  E8 00000000 E	call Clrscr                 ;//clear the screen
+ 000005F2  BA 00002884 R	mov edx, OFFSET msgMenu     ;//move the address of msgMenu to edx
+ 000005F7  E8 00000000 E	call WriteString            ;//write the value stored in edx to the console
+ 000005FC  E8 00000000 E	call Crlf                   ;//write a new line
+ 00000601  E8 00000000 E	call readInt                ;//read input from keyboard
 
 				ret
- 00000612			MenuScreen ENDP
+ 00000608			MenuScreen ENDP
 
 				;//------------------------------------------------------------------------------
- 00000612			ScoreScreen PROC USES eax edx
+ 00000608			ScoreScreen PROC USES eax edx
 				;//
 				;// Description: Reads and Displays the Scores from a File
 				;// Uses: eax and edx
@@ -815,23 +814,23 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   73 3A 20 0D 0A
 	   00
 
- 00000614			.code
+ 0000060A			.code
 				;//clean registers
- 00000614  33 C0		xor eax, eax
- 00000616  33 D2		xor edx, edx
+ 0000060A  33 C0		xor eax, eax
+ 0000060C  33 D2		xor edx, edx
 
- 00000618  E8 00000000 E	call Clrscr                     ;//clear the screen
- 0000061D  BA 000028AB R	mov edx, OFFSET msgScoreTitle   ;//move the address of msgScoreTitle to edx
- 00000622  E8 00000000 E	call WriteString                ;//write the value of edx to the console 
- 00000627  E8 00000000 E	call Crlf                       ;//write a new line
- 0000062C  E8 FFFFFA9D		call PrintScores                ;//print the scores to the screen
- 00000631  E8 00000000 E	call WaitMsg                    ;//print wait message
+ 0000060E  E8 00000000 E	call Clrscr                     ;//clear the screen
+ 00000613  BA 000028AB R	mov edx, OFFSET msgScoreTitle   ;//move the address of msgScoreTitle to edx
+ 00000618  E8 00000000 E	call WriteString                ;//write the value of edx to the console 
+ 0000061D  E8 00000000 E	call Crlf                       ;//write a new line
+ 00000622  E8 FFFFFAA7		call PrintScores                ;//print the scores to the screen
+ 00000627  E8 00000000 E	call WaitMsg                    ;//print wait message
 
 				ret
- 00000639			ScoreScreen ENDP
+ 0000062F			ScoreScreen ENDP
 
 				;//------------------------------------------------------------------------------
- 00000639			SaveScore PROC USES edx ecx eax ebx
+ 0000062F			SaveScore PROC USES edx ecx eax ebx
 				;//
 				;// Description: Saves the Score and Completion Time to a file 
 				;// Uses:
@@ -842,15 +841,15 @@ main.asm(508) : warning A4006:too many arguments in macro call
  000028B6 00000000		scoreSaveFileHandle Handle ?
  000028BA 00000000		stringLength dword ?
  000028BE 0D 0A			stringNewLine byte 13, 10
- 0000063D			.code
+ 00000633			.code
 
- 0000063D  C7 05 00000014 R	mov cursorInfo.bVisible, TRUE           ;//set the cursor visible so the user can see what they type
+ 00000633  C7 05 00000014 R	mov cursorInfo.bVisible, TRUE           ;//set the cursor visible so the user can see what they type
 	   00000001
 
 				;//set the cursor info struct to the console
 				INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
- 00000657  E8 00000000 E	call Clrscr                             ;//clear the screen
+ 0000064D  E8 00000000 E	call Clrscr                             ;//clear the screen
 
 				mWrite "Congratulations on wining!"     ;//print the win message to the screen
  000028C0		     1		.data		
@@ -860,43 +859,43 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   20 6F 6E 20 77
 	   69 6E 69 6E 67
 	   21 00
- 0000065C		     1		.code
- 0000065C  52		     1		push	edx
- 0000065D  BA 000028C0 R     1		mov	edx,OFFSET ??0009
- 00000662  E8 00000000 E     1		call	WriteString
- 00000667  5A		     1		pop	edx
- 00000668  E8 00000000 E	call Crlf                               ;//print an new line
+ 00000652		     1		.code
+ 00000652  52		     1		push	edx
+ 00000653  BA 000028C0 R     1		mov	edx,OFFSET ??0009
+ 00000658  E8 00000000 E     1		call	WriteString
+ 0000065D  5A		     1		pop	edx
+ 0000065E  E8 00000000 E	call Crlf                               ;//print an new line
 				mWrite "score: "                        ;//print score leader text to the screen
  000028DB		     1		.data		
  000028DB 73 63 6F 72 65     1		??000A BYTE "score: ",0	
 	   3A 20 00
- 0000066D		     1		.code
- 0000066D  52		     1		push	edx
- 0000066E  BA 000028DB R     1		mov	edx,OFFSET ??000A
- 00000673  E8 00000000 E     1		call	WriteString
- 00000678  5A		     1		pop	edx
+ 00000663		     1		.code
+ 00000663  52		     1		push	edx
+ 00000664  BA 000028DB R     1		mov	edx,OFFSET ??000A
+ 00000669  E8 00000000 E     1		call	WriteString
+ 0000066E  5A		     1		pop	edx
 
- 00000679  33 C0		xor eax, eax                            ;//clean the eax register
- 0000067B  A1 0000005B R	mov eax, score                          ;//move the value of score to eax
- 00000680  E8 00000000 E	call WriteInt                           ;//write the value of eax to the screen
+ 0000066F  33 C0		xor eax, eax                            ;//clean the eax register
+ 00000671  A1 0000005B R	mov eax, score                          ;//move the value of score to eax
+ 00000676  E8 00000000 E	call WriteInt                           ;//write the value of eax to the screen
 
- 00000685  E8 00000000 E	call Crlf                               ;//write a new line
+ 0000067B  E8 00000000 E	call Crlf                               ;//write a new line
 				mWrite "Time Remaining: "               ;//write the time remaining message to the screen
  000028E3		     1		.data		
  000028E3 54 69 6D 65 20     1		??000B BYTE "Time Remaining: ",0	
 	   52 65 6D 61 69
 	   6E 69 6E 67 3A
 	   20 00
- 0000068A		     1		.code
- 0000068A  52		     1		push	edx
- 0000068B  BA 000028E3 R     1		mov	edx,OFFSET ??000B
- 00000690  E8 00000000 E     1		call	WriteString
- 00000695  5A		     1		pop	edx
+ 00000680		     1		.code
+ 00000680  52		     1		push	edx
+ 00000681  BA 000028E3 R     1		mov	edx,OFFSET ??000B
+ 00000686  E8 00000000 E     1		call	WriteString
+ 0000068B  5A		     1		pop	edx
 
- 00000696  33 C0		xor eax, eax                            ;//clean the eax register
- 00000698  A1 0000004B R	mov eax, timeRemaining                  ;//move the time Remaining to the eax 
- 0000069D  E8 00000000 E	call WriteInt                           ;//write the value of eax to the screen
- 000006A2  E8 00000000 E	call Crlf                               ;//print a new line to the screen
+ 0000068C  33 C0		xor eax, eax                            ;//clean the eax register
+ 0000068E  A1 0000004B R	mov eax, timeRemaining                  ;//move the time Remaining to the eax 
+ 00000693  E8 00000000 E	call WriteInt                           ;//write the value of eax to the screen
+ 00000698  E8 00000000 E	call Crlf                               ;//print a new line to the screen
 
 				;//Get user input
 				mWrite "Please Enter a Name: "          ;//print name prompt to the screen
@@ -906,25 +905,25 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   65 72 20 61 20
 	   4E 61 6D 65 3A
 	   20 00
- 000006A7		     1		.code
- 000006A7  52		     1		push	edx
- 000006A8  BA 000028F4 R     1		mov	edx,OFFSET ??000C
- 000006AD  E8 00000000 E     1		call	WriteString
- 000006B2  5A		     1		pop	edx
- 000006B3  B9 00001388		mov ecx, BUFFER_SIZE                    ;//get the buffer size
- 000006B8  BA 00000081 R	mov edx, OFFSET fileBuffer              ;//move the address of fileBuffer to edx
- 000006BD  E8 00000000 E	call ReadString                         ;//get input from keyboard
- 000006C2  A3 000028BA R	mov stringLength, eax                   ;//move the length of that input to stringLength
+ 0000069D		     1		.code
+ 0000069D  52		     1		push	edx
+ 0000069E  BA 000028F4 R     1		mov	edx,OFFSET ??000C
+ 000006A3  E8 00000000 E     1		call	WriteString
+ 000006A8  5A		     1		pop	edx
+ 000006A9  B9 00001388		mov ecx, BUFFER_SIZE                    ;//get the buffer size
+ 000006AE  BA 00000081 R	mov edx, OFFSET fileBuffer              ;//move the address of fileBuffer to edx
+ 000006B3  E8 00000000 E	call ReadString                         ;//get input from keyboard
+ 000006B8  A3 000028BA R	mov stringLength, eax                   ;//move the length of that input to stringLength
 
 				;// open score file for writing 
 				;// Note:(Nathan) : Had to do it this way as existing library doesn't allow for appending of file
 				INVOKE CreateFile, ADDR scoreFileName, GENERIC_WRITE, DO_NOT_SHARE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0
 
- 000006E3  A3 000028B6 R	mov scoreSaveFileHandle, eax            ;//move the file handle to scoreSaveFileHandle
+ 000006D9  A3 000028B6 R	mov scoreSaveFileHandle, eax            ;//move the file handle to scoreSaveFileHandle
 
 				;//check if the file was opened successfully
 				.IF(eax == INVALID_HANDLE_VALUE)
- 000006ED  E8 00000000 E	call Crlf
+ 000006E3  E8 00000000 E	call Crlf
 				mWrite "ERROR: cannot open scores.dat file"
  0000290A		     1		.data		
  0000290A 45 52 52 4F 52     1		??000D BYTE "ERROR: cannot open scores.dat file",0	
@@ -934,36 +933,36 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   63 6F 72 65 73
 	   2E 64 61 74 20
 	   66 69 6C 65 00
- 000006F2		     1		.code
- 000006F2  52		     1		push	edx
- 000006F3  BA 0000290A R     1		mov	edx,OFFSET ??000D
- 000006F8  E8 00000000 E     1		call	WriteString
- 000006FD  5A		     1		pop	edx
- 000006FE  E8 00000000 E	call Crlf
- 00000703  E8 00000000 E	call WaitMsg
- 00000708  E9 000000C8		jmp Quit                                ;//exit the save function
+ 000006E8		     1		.code
+ 000006E8  52		     1		push	edx
+ 000006E9  BA 0000290A R     1		mov	edx,OFFSET ??000D
+ 000006EE  E8 00000000 E     1		call	WriteString
+ 000006F3  5A		     1		pop	edx
+ 000006F4  E8 00000000 E	call Crlf
+ 000006F9  E8 00000000 E	call WaitMsg
+ 000006FE  E9 000000C8		jmp Quit                                ;//exit the save function
 				.ENDIF
 
 				;//move the file pointer to the end of the file
 				invoke SetFilePointer, scoreSaveFileHandle, 0, 0, FILE_END
 
- 0000071E  FF 35 000028BA R	push stringLength                       ;//save the value of stringLength for use later because its going to be overwritten
+ 00000714  FF 35 000028BA R	push stringLength                       ;//save the value of stringLength for use later because its going to be overwritten
 
 				;//Write New Line Chars so that each entry is on it's own line
 				INVOKE WriteFile, scoreSaveFileHandle, addr stringNewLine, lengthof stringNewLine, addr stringLength, 0
 
- 0000073D  8F 05 000028BA R	pop stringLength;//restore the value of stringLength
+ 00000733  8F 05 000028BA R	pop stringLength;//restore the value of stringLength
 
 				;//write user input into file
 				INVOKE WriteFile, scoreSaveFileHandle, addr fileBuffer, stringLength, addr stringLength, 0
 
 				;//write score to file
 				;//clean the registers
- 00000760  33 C0		xor eax, eax
- 00000762  33 D2		xor edx, edx
+ 00000756  33 C0		xor eax, eax
+ 00000758  33 D2		xor edx, edx
 
- 00000764  A1 0000005B R	mov eax, score                          ;//move the value of score to eax
- 00000769  E8 0000006C		call IntToString                        ;//convert the value in eax to a string
+ 0000075A  A1 0000005B R	mov eax, score                          ;//move the value of score to eax
+ 0000075F  E8 0000006C		call IntToString                        ;//convert the value in eax to a string
 
 				INVOKE Str_length, edx                  ;//get the length of the string
 
@@ -972,11 +971,11 @@ main.asm(508) : warning A4006:too many arguments in macro call
 
 				;//Write TimeRemaining to string
 				;//clean the registers
- 00000788  33 C0		xor eax, eax
- 0000078A  33 D2		xor edx, edx
+ 0000077E  33 C0		xor eax, eax
+ 00000780  33 D2		xor edx, edx
 
- 0000078C  A1 0000004B R	mov eax, timeRemaining                  ;//move the value of timeRemaining to eax
- 00000791  E8 00000044		call IntToString                        ;//convert the value of eax to a string
+ 00000782  A1 0000004B R	mov eax, timeRemaining                  ;//move the value of timeRemaining to eax
+ 00000787  E8 00000044		call IntToString                        ;//convert the value of eax to a string
 
 				INVOKE Str_length, edx                  ;//get the length of the screen
 
@@ -986,18 +985,18 @@ main.asm(508) : warning A4006:too many arguments in macro call
 				;//close the file
 				INVOKE CloseHandle, scoreSaveFileHandle
 
- 000007BB  C7 05 00000014 R	mov cursorInfo.bVisible, FALSE          ;//set the cursor invisible 
+ 000007B1  C7 05 00000014 R	mov cursorInfo.bVisible, FALSE          ;//set the cursor invisible 
 	   00000000
 
 				;//write the cursor info struct the the console
 				INVOKE SetConsoleCursorInfo, consoleHandle, addr cursorInfo
 
- 000007D5			Quit:
+ 000007CB			Quit:
 				ret
- 000007DA			SaveScore ENDP
+ 000007D0			SaveScore ENDP
 
 				;//------------------------------------------------------------------------------
- 000007DA			IntToString PROC USES eax ecx edi ebx
+ 000007D0			IntToString PROC USES eax ecx edi ebx
 				;//
 				;// Description: Turns a Integer into a string
 				;// Uses: eax, ecx, edi, ebx
@@ -1015,49 +1014,49 @@ main.asm(508) : warning A4006:too many arguments in macro call
 	   ] 00
  0000293A 00			neg_flag  BYTE ?
 
- 000007DE			.code
+ 000007D4			.code
 
- 000007DE  C6 05 0000293A R	mov   neg_flag, false                   ;//assume neg_flag is false
+ 000007D4  C6 05 0000293A R	mov   neg_flag, false                   ;//assume neg_flag is false
 	   00
- 000007E5  0B C0		or    eax, eax                          ;//is AX positive ?
- 000007E7  79 09		jns   WIS1                              ;//yes: jump to B1
- 000007E9  F7 D8		neg   eax                               ;//no: make it positive
- 000007EB  C6 05 0000293A R	mov   neg_flag, true                    ;//set neg_flag to true
+ 000007DB  0B C0		or    eax, eax                          ;//is AX positive ?
+ 000007DD  79 09		jns   WIS1                              ;//yes: jump to B1
+ 000007DF  F7 D8		neg   eax                               ;//no: make it positive
+ 000007E1  C6 05 0000293A R	mov   neg_flag, true                    ;//set neg_flag to true
 	   01
 
- 000007F2			WIS1:
- 000007F2  B9 00000000		mov   ecx, 0                            ;// digit count = 0
- 000007F7  BF 0000292D R	mov   edi, OFFSET buffer_B
- 000007FC  83 C7 0B		add   edi, (WI_Bufsize - 1)
- 000007FF  BB 0000000A		mov   ebx, 10                           ;// will divide by 10
+ 000007E8			WIS1:
+ 000007E8  B9 00000000		mov   ecx, 0                            ;// digit count = 0
+ 000007ED  BF 0000292D R	mov   edi, OFFSET buffer_B
+ 000007F2  83 C7 0B		add   edi, (WI_Bufsize - 1)
+ 000007F5  BB 0000000A		mov   ebx, 10                           ;// will divide by 10
 
- 00000804			WIS2:
- 00000804  BA 00000000		mov   edx, 0                            ;// set dividend to 0
- 00000809  F7 F3		div   ebx                               ;// divide AX by 10
- 0000080B  80 CA 30		or    dl, 30h                           ;// convert remainder to ASCII
- 0000080E  4F			dec   edi                               ;// reverse through the buffer
- 0000080F  88 17		mov[edi], dl                            ;// store ASCII digit
- 00000811  41			inc   ecx                               ;// increment digit count
- 00000812  0B C0		or    eax, eax                          ;// quotient > 0 ?
- 00000814  75 EE		jnz   WIS2                              ;// yes: divide again
+ 000007FA			WIS2:
+ 000007FA  BA 00000000		mov   edx, 0                            ;// set dividend to 0
+ 000007FF  F7 F3		div   ebx                               ;// divide AX by 10
+ 00000801  80 CA 30		or    dl, 30h                           ;// convert remainder to ASCII
+ 00000804  4F			dec   edi                               ;// reverse through the buffer
+ 00000805  88 17		mov[edi], dl                            ;// store ASCII digit
+ 00000807  41			inc   ecx                               ;// increment digit count
+ 00000808  0B C0		or    eax, eax                          ;// quotient > 0 ?
+ 0000080A  75 EE		jnz   WIS2                              ;// yes: divide again
 
 				;// Insert the sign.
 
- 00000816  4F			dec   edi                               ;// back up in the buffer
- 00000817  41			inc   ecx                               ;// increment counter
- 00000818  C6 07 20		mov   BYTE PTR[edi], ' '                ;// insert a space because I wanted to (nathan)
- 0000081B  80 3D 0000293A R	cmp   neg_flag, false                   ;// was the number positive ?
+ 0000080C  4F			dec   edi                               ;// back up in the buffer
+ 0000080D  41			inc   ecx                               ;// increment counter
+ 0000080E  C6 07 20		mov   BYTE PTR[edi], ' '                ;// insert a space because I wanted to (nathan)
+ 00000811  80 3D 0000293A R	cmp   neg_flag, false                   ;// was the number positive ?
 	   00
- 00000822  74 03		jz    WIS3;// yes
- 00000824  C6 07 20		mov   BYTE PTR[edi], ' '                ;// no: insert a space because I wanted to (nathan)
+ 00000818  74 03		jz    WIS3;// yes
+ 0000081A  C6 07 20		mov   BYTE PTR[edi], ' '                ;// no: insert a space because I wanted to (nathan)
 
- 00000827			WIS3:
- 00000827  8B D7		mov  edx, edi
+ 0000081D			WIS3:
+ 0000081D  8B D7		mov  edx, edi
 				ret
- 0000082E			IntToString ENDP
+ 00000824			IntToString ENDP
 
 				       ;//------------------------------------------------------------------------------
- 0000082E			GenerateRandomPoint PROC USES eax edx
+ 00000824			GenerateRandomPoint PROC USES eax edx
 				;//
 				;// Description: generate a random point
 				;// Uses: eax, edx, ecx
@@ -1066,34 +1065,34 @@ main.asm(508) : warning A4006:too many arguments in macro call
 				;// Remarks: this might end up as a macro for easer calling.
 				;//------------------------------------------------------------------------------
 				;//clean registers
- 00000830  33 C0		xor eax, eax
- 00000832  33 D2		xor edx, edx
+ 00000826  33 C0		xor eax, eax
+ 00000828  33 D2		xor edx, edx
 
 				;//gen X-axis
- 00000834  0F B6 05		movzx eax, mapWidth                     ;//set the max number that can be return by RandomRange to the Map width
+ 0000082A  0F B6 05		movzx eax, mapWidth                     ;//set the max number that can be return by RandomRange to the Map width
 	   00000018 R
- 0000083B  E8 00000000 E	call RandomRange                        ;//return a number between 0 and eax-1
- 00000840  66| 0F B6 D0		movzx dx, al                            ;//move the value returned by RandomRange to the dx register
- 00000844  66| 89 15		mov MarkerPOS.X, dx                     ;//move the value of the dx register to the x position
+ 00000831  E8 00000000 E	call RandomRange                        ;//return a number between 0 and eax-1
+ 00000836  66| 0F B6 D0		movzx dx, al                            ;//move the value returned by RandomRange to the dx register
+ 0000083A  66| 89 15		mov MarkerPOS.X, dx                     ;//move the value of the dx register to the x position
 	   0000002A R
 
 				;//gen y-Axis
 				;//clean registers
- 0000084B  33 C0		xor eax, eax
- 0000084D  33 D2		xor edx, edx
+ 00000841  33 C0		xor eax, eax
+ 00000843  33 D2		xor edx, edx
 
- 0000084F  0F B6 05		movzx eax, mapHeight                    ;//set the max number that can be return by RandomRange to the Map width
+ 00000845  0F B6 05		movzx eax, mapHeight                    ;//set the max number that can be return by RandomRange to the Map width
 	   00000019 R
- 00000856  E8 00000000 E	call RandomRange                        ;//return a number between 0 and eax-1
- 0000085B  66| 0F B6 D0		movzx dx, al                            ;//move the value returned by RandomRange to the dx register
- 0000085F  66| 89 15		mov MarkerPOS.y, dx                     ;//move the value of the dx register to the x position
+ 0000084C  E8 00000000 E	call RandomRange                        ;//return a number between 0 and eax-1
+ 00000851  66| 0F B6 D0		movzx dx, al                            ;//move the value returned by RandomRange to the dx register
+ 00000855  66| 89 15		mov MarkerPOS.y, dx                     ;//move the value of the dx register to the x position
 	   0000002C R
 
 				ret
- 00000869			GenerateRandomPoint ENDP
+ 0000085F			GenerateRandomPoint ENDP
 
 				;//------------------------------------------------------------------------------
- 00000869			GenerateScorePickups PROC USES eax edx ecx
+ 0000085F			GenerateScorePickups PROC USES eax edx ecx
 				;//
 				;// Description: will randomly place score pickups on the map
 				;// Uses: Nothing
@@ -1109,18 +1108,18 @@ main.asm(508) : warning A4006:too many arguments in macro call
  00002943 9D			highPointChar byte 157
  00002944 EA			lowPointChar byte 234
 
- 0000086C			.code
- 0000086C  E8 00000000 E	call Randomize              ;//init the randomizer
- 00000871			GenHighPoint:
- 00000871  33 C9		xor ecx, ecx                ;//clean the ecx register
- 00000873  8B 0D 0000293B R	mov ecx, numHighPoints      ;//set the ecx (loop counter) to the number of high point chars to generate
+ 00000862			.code
+ 00000862  E8 00000000 E	call Randomize              ;//init the randomizer
+ 00000867			GenHighPoint:
+ 00000867  33 C9		xor ecx, ecx                ;//clean the ecx register
+ 00000869  8B 0D 0000293B R	mov ecx, numHighPoints      ;//set the ecx (loop counter) to the number of high point chars to generate
 
 				;//Gen high point pickups
- 00000879			L1:
- 00000879			RetryX :
- 00000879  E8 FFFFFFB0		call GenerateRandomPoint    ;//get a random point
+ 0000086F			L1:
+ 0000086F			RetryX :
+ 0000086F  E8 FFFFFFB0		call GenerateRandomPoint    ;//get a random point
 
- 0000087E  33 DB		xor ebx, ebx                ;//clean the ebx register
+ 00000874  33 DB		xor ebx, ebx                ;//clean the ebx register
 
 				;//get the value in the levelBuffer at the FuturePOS
 				invoke GetValueFromMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth
@@ -1129,31 +1128,31 @@ main.asm(508) : warning A4006:too many arguments in macro call
 				;//set the car at the generated position to ascii ùto 157
 				invoke SetValueToMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth, 157
 
- 000008C2  51			push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
+ 000008B8  51			push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
 
 				;//move the cursor to the position specified in CurrentPOS
 				INVOKE SetConsoleCursorPosition, consoleHandle, MarkerPOS
 
- 000008D4  A0 00002943 R	mov al, highPointChar       ;//move a empty space to the al register
- 000008D9  E8 00000000 E	call WriteChar              ;//write a blank char so to erase the previous player marker
+ 000008CA  A0 00002943 R	mov al, highPointChar       ;//move a empty space to the al register
+ 000008CF  E8 00000000 E	call WriteChar              ;//write a blank char so to erase the previous player marker
 
- 000008DE  59			pop ecx                     ;//restore the ecx register
- 000008DF  E2 98		loop L1
- 000008E1  EB 02		jmp GenerateLowPoint
+ 000008D4  59			pop ecx                     ;//restore the ecx register
+ 000008D5  E2 98		loop L1
+ 000008D7  EB 02		jmp GenerateLowPoint
 				.ENDIF
 
- 000008E3  EB 94		jmp RetryX
+ 000008D9  EB 94		jmp RetryX
 
- 000008E5			GenerateLowPoint :
- 000008E5  33 C9		xor ecx, ecx                ;//clean the ecx register
- 000008E7  8B 0D 0000293F R	mov ecx, numLowPoints       ;//set the ecx (loop counter) to the number of low point chars to generate
+ 000008DB			GenerateLowPoint :
+ 000008DB  33 C9		xor ecx, ecx                ;//clean the ecx register
+ 000008DD  8B 0D 0000293F R	mov ecx, numLowPoints       ;//set the ecx (loop counter) to the number of low point chars to generate
 
 				;//Gen high point pickups
- 000008ED			L2:
- 000008ED			RetryY :
- 000008ED  E8 FFFFFF3C		call GenerateRandomPoint    ;//get a random point
+ 000008E3			L2:
+ 000008E3			RetryY :
+ 000008E3  E8 FFFFFF3C		call GenerateRandomPoint    ;//get a random point
 
- 000008F2  33 DB		xor ebx, ebx                ;//clean the ebx register
+ 000008E8  33 DB		xor ebx, ebx                ;//clean the ebx register
 
 				;//get the value in the levelBuffer at the FuturePOS
 				invoke GetValueFromMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth
@@ -1161,64 +1160,64 @@ main.asm(508) : warning A4006:too many arguments in macro call
 				.IF(ebx == 32);
 				;//set the car at the generated position to ascii ùto 234
 				invoke SetValueToMatrix, addr levelBuffer, MarkerPOS, mapHeight, mapWidth, 234
- 00000936  51			push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
+ 0000092C  51			push ecx                    ;//save the ecx register because SetConsoleCursorPosition messes with it
 
 				;//move the cursor to the position specified in CurrentPOS
 				INVOKE SetConsoleCursorPosition, consoleHandle, MarkerPOS
- 00000948  A0 00002944 R	mov al, lowPointChar        ;//move a empty space to the al register
- 0000094D  E8 00000000 E	call WriteChar              ;//write a blank char so to erase the previous player marker
+ 0000093E  A0 00002944 R	mov al, lowPointChar        ;//move a empty space to the al register
+ 00000943  E8 00000000 E	call WriteChar              ;//write a blank char so to erase the previous player marker
 
- 00000952  59			pop ecx                     ;//restore the ecx register
- 00000953  E2 98		loop L2
- 00000955  EB 02		jmp Quit
+ 00000948  59			pop ecx                     ;//restore the ecx register
+ 00000949  E2 98		loop L2
+ 0000094B  EB 02		jmp Quit
 				.ENDIF
 
- 00000957  EB 94		jmp RetryY
+ 0000094D  EB 94		jmp RetryY
 
- 00000959			Quit :
+ 0000094F			Quit :
 				ret
- 0000095D			GenerateScorePickups ENDP
+ 00000953			GenerateScorePickups ENDP
 
 				;//------------------------------------------------------------------------------
- 0000095D			UpdatePlayerLocation PROC USES eax
+ 00000953			UpdatePlayerLocation PROC USES eax
 				;// Uses: al
 				;// Description: Don't Know May Not Be Used;
 				;// Receives: the player current and future locations in global variables
 				;// Returns: nothing
 				;//------------------------------------------------------------------------------
  00002945			.data
- 0000095E			.code
- 0000095E  33 C0		xor eax, eax
+ 00000954			.code
+ 00000954  33 C0		xor eax, eax
 
 				;//Draw Player
 				INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS  ;//move the cursor to the position specified in CurrentPOS
- 00000971  B0 20		mov al, " "                                                 ;//move a empty space to the al register
- 00000973  E8 00000000 E	call WriteChar                                              ;//write a blank char so to erase the previous player marker
+ 00000967  B0 20		mov al, " "                                                 ;//move a empty space to the al register
+ 00000969  E8 00000000 E	call WriteChar                                              ;//write a blank char so to erase the previous player marker
 
 				mCopyCOORD CurrentPOS, FuturePOS                            ;//copy the futurePOS to the currentPOS
- 00000978  66| 50	     1	push ax
- 0000097A  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
- 0000097D  66| A1	     1	mov ax, (coord ptr FuturePOS).X       ;//move the value of sourceCOORD.x to the ax register
+ 0000096E  66| 50	     1	push ax
+ 00000970  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
+ 00000973  66| A1	     1	mov ax, (coord ptr FuturePOS).X       ;//move the value of sourceCOORD.x to the ax register
 	   0000001A R
- 00000983  66| A3	     1	mov(coord ptr CurrentPOS).X, ax          ;//move the value of the ax register to destCOORD.x
+ 00000979  66| A3	     1	mov(coord ptr CurrentPOS).X, ax          ;//move the value of the ax register to destCOORD.x
 	   0000001E R
- 00000989  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
- 0000098C  66| A1	     1	mov ax, (coord ptr FuturePOS).Y       ;//move the value of sourceCOORD.x to the ax register
+ 0000097F  66| 33 C0	     1	xor ax, ax                              ;//clean ax register
+ 00000982  66| A1	     1	mov ax, (coord ptr FuturePOS).Y       ;//move the value of sourceCOORD.x to the ax register
 	   0000001C R
- 00000992  66| A3	     1	mov(coord ptr CurrentPOS).Y, ax          ;//move the value of the ax register to destCOORD.x
+ 00000988  66| A3	     1	mov(coord ptr CurrentPOS).Y, ax          ;//move the value of the ax register to destCOORD.x
 	   00000020 R
- 00000998  66| 58	     1	pop ax
+ 0000098E  66| 58	     1	pop ax
 
 				INVOKE SetConsoleCursorPosition, consoleHandle, CurrentPOS  ;//move the cursor to the position specified in CurrentPOS
- 000009AB  B0 DB		mov al, 0DBh                                                ;//move the weird box thing to the al register
- 000009AD  B0 DB		mov al, 0DBh                                                ;//move the weird box thing to the al register
- 000009AF  E8 00000000 E	call WriteChar                                              ;//draw the player char
+ 000009A1  B0 DB		mov al, 0DBh                                                ;//move the weird box thing to the al register
+ 000009A3  B0 DB		mov al, 0DBh                                                ;//move the weird box thing to the al register
+ 000009A5  E8 00000000 E	call WriteChar                                              ;//draw the player char
 
 				ret
- 000009B6			UpdatePlayerLocation ENDP
+ 000009AC			UpdatePlayerLocation ENDP
 
 				end main
-Microsoft (R) Macro Assembler Version 12.00.30501.0	    10/02/15 20:20:48
+Microsoft (R) Macro Assembler Version 12.00.30501.0	    10/04/15 11:34:11
 main.asm						     Symbols 2 - 1
 
 
@@ -1333,7 +1332,7 @@ Segments and Groups:
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
 _DATA  . . . . . . . . . . . . .	32 Bit	 00002945 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000009B6 Para	  Public  'CODE'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000009AC Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -1354,15 +1353,15 @@ FileTimeToDosDateTime  . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 FileTimeToSystemTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FlushConsoleInputBuffer  . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FormatMessageA . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-GenerateRandomPoint  . . . . . .	P Near	 0000082E _TEXT	Length= 0000003B Public STDCALL
-GenerateScorePickups . . . . . .	P Near	 00000869 _TEXT	Length= 000000F4 Public STDCALL
-  GenHighPoint . . . . . . . . .	L Near	 00000871 _TEXT	
-  L1 . . . . . . . . . . . . . .	L Near	 00000879 _TEXT	
-  RetryX . . . . . . . . . . . .	L Near	 00000879 _TEXT	
-  GenerateLowPoint . . . . . . .	L Near	 000008E5 _TEXT	
-  L2 . . . . . . . . . . . . . .	L Near	 000008ED _TEXT	
-  RetryY . . . . . . . . . . . .	L Near	 000008ED _TEXT	
-  Quit . . . . . . . . . . . . .	L Near	 00000959 _TEXT	
+GenerateRandomPoint  . . . . . .	P Near	 00000824 _TEXT	Length= 0000003B Public STDCALL
+GenerateScorePickups . . . . . .	P Near	 0000085F _TEXT	Length= 000000F4 Public STDCALL
+  GenHighPoint . . . . . . . . .	L Near	 00000867 _TEXT	
+  L1 . . . . . . . . . . . . . .	L Near	 0000086F _TEXT	
+  RetryX . . . . . . . . . . . .	L Near	 0000086F _TEXT	
+  GenerateLowPoint . . . . . . .	L Near	 000008DB _TEXT	
+  L2 . . . . . . . . . . . . . .	L Near	 000008E3 _TEXT	
+  RetryY . . . . . . . . . . . .	L Near	 000008E3 _TEXT	
+  Quit . . . . . . . . . . . . .	L Near	 0000094F _TEXT	
 GetCommandLineA  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetCommandTail . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetConsoleCP . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -1377,9 +1376,9 @@ GetLocalTime . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetMaxXY . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetMseconds  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetNumberOfConsoleInputEvents  .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-GetPlayerInput . . . . . . . . .	P Near	 00000456 _TEXT	Length= 0000019C Public STDCALL
+GetPlayerInput . . . . . . . . .	P Near	 0000044C _TEXT	Length= 0000019C Public STDCALL
   keyPress . . . . . . . . . . .	Byte	 bp - 00000001
-  Quit . . . . . . . . . . . . .	L Near	 000005EF _TEXT	
+  Quit . . . . . . . . . . . . .	L Near	 000005E5 _TEXT	
 GetProcessHeap . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -1397,18 +1396,18 @@ HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-IntToString  . . . . . . . . . .	P Near	 000007DA _TEXT	Length= 00000054 Public STDCALL
-  WIS1 . . . . . . . . . . . . .	L Near	 000007F2 _TEXT	
-  WIS2 . . . . . . . . . . . . .	L Near	 00000804 _TEXT	
-  WIS3 . . . . . . . . . . . . .	L Near	 00000827 _TEXT	
+IntToString  . . . . . . . . . .	P Near	 000007D0 _TEXT	Length= 00000054 Public STDCALL
+  WIS1 . . . . . . . . . . . . .	L Near	 000007E8 _TEXT	
+  WIS2 . . . . . . . . . . . . .	L Near	 000007FA _TEXT	
+  WIS3 . . . . . . . . . . . . .	L Near	 0000081D _TEXT	
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-MainGameLoop . . . . . . . . . .	P Near	 00000230 _TEXT	Length= 00000181 Public STDCALL
-  GameLoop . . . . . . . . . . .	L Near	 00000360 _TEXT	
-  GameOver . . . . . . . . . . .	L Near	 0000037C _TEXT	
-  Win  . . . . . . . . . . . . .	L Near	 00000399 _TEXT	
-  quit . . . . . . . . . . . . .	L Near	 000003AF _TEXT	
-MenuScreen . . . . . . . . . . .	P Near	 000005F2 _TEXT	Length= 00000020 Public STDCALL
+MainGameLoop . . . . . . . . . .	P Near	 00000230 _TEXT	Length= 00000177 Public STDCALL
+  GameLoop . . . . . . . . . . .	L Near	 00000356 _TEXT	
+  GameOver . . . . . . . . . . .	L Near	 00000372 _TEXT	
+  Win  . . . . . . . . . . . . .	L Near	 0000038F _TEXT	
+  quit . . . . . . . . . . . . .	L Near	 000003A5 _TEXT	
+MenuScreen . . . . . . . . . . .	P Near	 000005E8 _TEXT	Length= 00000020 Public STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBoxAsk  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MsgBox . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -1434,9 +1433,9 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-SaveScore  . . . . . . . . . . .	P Near	 00000639 _TEXT	Length= 000001A1 Public STDCALL
-  Quit . . . . . . . . . . . . .	L Near	 000007D5 _TEXT	
-ScoreScreen  . . . . . . . . . .	P Near	 00000612 _TEXT	Length= 00000027 Public STDCALL
+SaveScore  . . . . . . . . . . .	P Near	 0000062F _TEXT	Length= 000001A1 Public STDCALL
+  Quit . . . . . . . . . . . . .	L Near	 000007CB _TEXT	
+ScoreScreen  . . . . . . . . . .	P Near	 00000608 _TEXT	Length= 00000027 Public STDCALL
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -1462,8 +1461,8 @@ Str_length . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 Str_trim . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_ucase  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SystemTimeToFileTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-UpdatePlayerLocation . . . . . .	P Near	 0000095D _TEXT	Length= 00000059 Public STDCALL
-UpdateTimer  . . . . . . . . . .	P Near	 000003B1 _TEXT	Length= 000000A5 Public STDCALL
+UpdatePlayerLocation . . . . . .	P Near	 00000953 _TEXT	Length= 00000059 Public STDCALL
+UpdateTimer  . . . . . . . . . .	P Near	 000003A7 _TEXT	Length= 000000A5 Public STDCALL
 WaitMsg  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBinB  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBin . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -1778,5 +1777,5 @@ white  . . . . . . . . . . . . .	Number	 0000000Fh
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
 
-	   11 Warnings
-	   0 Errors
+	   10 Warnings
+	   1 Errors
